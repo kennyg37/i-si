@@ -12,28 +12,46 @@ export class CHIRPSAPI {
 
   async getRainfallData(params: CHIRPSParams): Promise<CHIRPSResponse | null> {
     try {
-      const response = await axios.post(`${this.baseURL}`, {
-        operation: params.operation,
-        parameters: {
-          lat: params.lat,
-          lon: params.lon,
-          startDate: params.startDate,
-          endDate: params.endDate,
-          dataset: 'CHIRPS',
-          dataSource: 'CHIRPS_DAILY'
+      // CHIRPS API has CORS restrictions, so we'll use a different approach
+      // For now, return mock data that matches the expected structure
+      console.warn('CHIRPS API has CORS restrictions. Using mock data for development.');
+      
+      // Generate mock precipitation data
+      const mockData: CHIRPSResponse = {
+        data: this.generateMockPrecipitationData(params.startDate, params.endDate),
+        location: { lat: params.lat, lon: params.lon },
+        timeRange: {
+          start: params.startDate,
+          end: params.endDate
         }
-      }, {
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        timeout: 30000
-      });
+      };
 
-      return response.data;
+      return mockData;
     } catch (error) {
       console.error('CHIRPS API Error:', error);
       return null;
     }
+  }
+
+  private generateMockPrecipitationData(startDate: string, endDate: string): Record<string, { precipitation: number; anomaly?: number }> {
+    const data: Record<string, { precipitation: number; anomaly?: number }> = {};
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().split('T')[0];
+      // Generate realistic precipitation data for Rwanda (0-50mm range)
+      const basePrecipitation = Math.random() * 15 + 5; // 5-20mm base
+      const seasonalFactor = Math.sin((d.getMonth() / 12) * 2 * Math.PI) * 10; // Seasonal variation
+      const precipitation = Math.max(0, basePrecipitation + seasonalFactor + (Math.random() - 0.5) * 10);
+      
+      data[dateStr] = {
+        precipitation: Math.round(precipitation * 10) / 10,
+        anomaly: Math.round((Math.random() - 0.5) * 10 * 10) / 10
+      };
+    }
+    
+    return data;
   }
 
   async getRainfallTimeSeries(lat: number, lon: number, startDate: string, endDate: string) {

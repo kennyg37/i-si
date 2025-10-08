@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Map, BarChart3, Info, Home } from 'lucide-react';
+import { Map, BarChart3, Info, Home, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -10,6 +10,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 const navigation = [
   { name: 'Home', href: '/', icon: Home },
   { name: 'Map', href: '/map', icon: Map },
+  { name: 'AI Chat', href: '/ai-chat', icon: Bot },
   { name: 'Insights', href: '/insights', icon: BarChart3 },
   { name: 'About', href: '/about', icon: Info },
 ];

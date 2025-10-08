@@ -12,32 +12,11 @@ export class SRTMAPI {
 
   async getElevationData(params: SRTMParams): Promise<SRTMResponse | null> {
     try {
-      // For demo purposes, we'll use a simplified elevation service
-      // In production, you would use the actual OpenTopography API
-      const response = await axios.get(`${this.baseURL}elevation`, {
-        params: {
-          lat: params.lat,
-          lon: params.lon,
-          radius: params.radius || 1000
-        },
-        timeout: 30000
-      });
-
-      const elevation = response.data.elevation || 0;
-      const slope = this.calculateSlope(elevation, params.lat, params.lon);
-      const aspect = this.calculateAspect(elevation, params.lat, params.lon);
-      const floodRisk = this.calculateFloodRisk(elevation, slope);
-
-      return {
-        elevation,
-        slope,
-        aspect,
-        location: {
-          lat: params.lat,
-          lon: params.lon
-        },
-        floodRisk
-      };
+      // For development, we'll use mock data since the OpenTopography API
+      // may have CORS restrictions or require authentication
+      console.warn('SRTM API: Using mock elevation data for development.');
+      
+      return this.getFallbackElevationData(params);
     } catch (error) {
       console.error('SRTM API Error:', error);
       // Return fallback data for demo purposes

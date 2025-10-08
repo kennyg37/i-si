@@ -1,6 +1,6 @@
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
 import { nasaPowerAPI, chirpsAPI, sentinelHubAPI, srtmAPI } from '../api';
-import { ClimateDataPoint, AnomalyData } from '../utils/data-normalization';
+
 
 // NASA POWER API hooks
 export const useNASAPowerData = (
