@@ -12,17 +12,17 @@ export function APIStatus({ className }: APIStatusProps) {
   const apiStatuses = [
     {
       name: 'NASA POWER',
-      status: 'mock',
-      description: 'Using mock data due to date validation',
-      icon: Clock,
-      color: 'yellow'
+      status: 'active',
+      description: 'Real API with date validation and fallback',
+      icon: CheckCircle,
+      color: 'green'
     },
     {
       name: 'CHIRPS',
-      status: 'mock',
-      description: 'Using mock data due to CORS restrictions',
-      icon: WifiOff,
-      color: 'yellow'
+      status: 'active',
+      description: 'Real ClimateSERV API with fallback to mock data',
+      icon: CheckCircle,
+      color: 'green'
     },
     {
       name: 'Sentinel Hub',
@@ -33,10 +33,10 @@ export function APIStatus({ className }: APIStatusProps) {
     },
     {
       name: 'SRTM Elevation',
-      status: 'mock',
-      description: 'Using mock elevation data',
-      icon: Clock,
-      color: 'yellow'
+      status: 'active',
+      description: 'Multiple elevation services with fallback',
+      icon: CheckCircle,
+      color: 'green'
     }
   ];
 
@@ -91,13 +91,14 @@ export function APIStatus({ className }: APIStatusProps) {
           );
         })}
         
-        <div className="mt-4 p-3 rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800">
-          <p className="text-sm text-blue-800 dark:text-blue-200">
-            <strong>Development Mode:</strong> The application is currently using mock data for demonstration purposes. 
-            Configure your API endpoints in the environment variables to use real data.
+        <div className="mt-4 p-3 rounded-lg bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
+          <p className="text-sm text-green-800 dark:text-green-200">
+            <strong>Real API Integration:</strong> The application now uses real APIs for climate and elevation data. 
+            APIs include fallback mechanisms to ensure reliability. Configure additional API keys in environment variables for enhanced functionality.
           </p>
         </div>
       </CardContent>
     </Card>
   );
 }
+

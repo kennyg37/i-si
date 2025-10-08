@@ -1,47 +1,87 @@
 import axios from 'axios';
 import type { SRTMParams, SRTMResponse } from '@/types';
 
-const OPENTOPOGRAPHY_API_URL = process.env.NEXT_PUBLIC_OPENTOPOGRAPHY_API_URL || 'https://cloud.sdfi.dk/api/';
-
 export class SRTMAPI {
-  private baseURL: string;
+  private proxyURL: string;
 
   constructor() {
-    this.baseURL = OPENTOPOGRAPHY_API_URL;
+    this.proxyURL = '/api/proxy/elevation';
   }
 
   async getElevationData(params: SRTMParams): Promise<SRTMResponse | null> {
     try {
-      // For development, we'll use mock data since the OpenTopography API
-      // may have CORS restrictions or require authentication
-      console.warn('SRTM API: Using mock elevation data for development.');
-      
-      return this.getFallbackElevationData(params);
+      const response = await axios.post(this.proxyURL, {
+        locations: [
+          {
+            latitude: params.lat,
+            longitude: params.lon
+          }
+        ]
+      });
+
+      if (response.data && response.data.results && response.data.results.length > 0) {
+        const elevation = response.data.results[0].elevation;
+
+        const { slope, aspect } = await this.calculateTerrainMetrics(params.lat, params.lon, elevation);
+        const floodRisk = this.calculateFloodRisk(elevation, slope);
+
+        return {
+          elevation,
+          slope,
+          aspect,
+          location: {
+            lat: params.lat,
+            lon: params.lon
+          },
+          floodRisk
+        };
+      }
+
+      throw new Error('No elevation data returned');
     } catch (error) {
       console.error('SRTM API Error:', error);
-      // Return fallback data for demo purposes
-      return this.getFallbackElevationData(params);
+      return null;
     }
   }
 
-  private calculateSlope(elevation: number, lat: number, lon: number): number {
-    // Simplified slope calculation
-    // In production, this would use actual terrain analysis
-    const baseElevation = 1500; // Average elevation for Rwanda
-    return Math.abs(elevation - baseElevation) / 1000; // Simplified slope in degrees
-  }
+  private async calculateTerrainMetrics(lat: number, lon: number, centerElevation: number): Promise<{ slope: number; aspect: number }> {
+    try {
+      const offset = 0.001;
 
-  private calculateAspect(elevation: number, lat: number, lon: number): number {
-    // Simplified aspect calculation
-    // In production, this would use actual terrain analysis
-    return Math.random() * 360; // Random aspect for demo
+      const points = [
+        { latitude: lat + offset, longitude: lon },
+        { latitude: lat - offset, longitude: lon },
+        { latitude: lat, longitude: lon + offset },
+        { latitude: lat, longitude: lon - offset }
+      ];
+
+      const response = await axios.post(this.proxyURL, { locations: points });
+
+      if (response.data && response.data.results && response.data.results.length === 4) {
+        const elevations = response.data.results.map((r: any) => r.elevation);
+        const [north, south, east, west] = elevations;
+
+        const dz_dx = (east - west) / (2 * 111320 * offset);
+        const dz_dy = (north - south) / (2 * 110540 * offset);
+        const slope = Math.atan(Math.sqrt(dz_dx * dz_dx + dz_dy * dz_dy)) * (180 / Math.PI);
+
+        let aspect = Math.atan2(dz_dy, -dz_dx) * (180 / Math.PI);
+        if (aspect < 0) aspect += 360;
+
+        return { slope, aspect };
+      }
+
+      return { slope: 5, aspect: 180 };
+    } catch (error) {
+      console.error('Terrain metrics calculation error:', error);
+      return { slope: 5, aspect: 180 };
+    }
   }
 
   private calculateFloodRisk(elevation: number, slope: number): SRTMResponse['floodRisk'] {
     const factors: string[] = [];
     let score = 0;
 
-    // Low elevation increases flood risk
     if (elevation < 1000) {
       score += 0.4;
       factors.push('Low elevation');
@@ -50,18 +90,16 @@ export class SRTMAPI {
       factors.push('Moderate elevation');
     }
 
-    // Low slope increases flood risk
     if (slope < 5) {
       score += 0.3;
-      factors.push('Low slope');
+      factors.push('Low slope - poor drainage');
     } else if (slope < 15) {
       score += 0.1;
       factors.push('Moderate slope');
     }
 
-    // Proximity to water bodies (simplified)
     score += 0.1;
-    factors.push('Proximity to water');
+    factors.push('Terrain analysis');
 
     const level = score > 0.6 ? 'high' : score > 0.3 ? 'medium' : 'low';
 
@@ -72,33 +110,13 @@ export class SRTMAPI {
     };
   }
 
-  private getFallbackElevationData(params: SRTMParams): SRTMResponse {
-    // Fallback data for demo purposes
-    const elevation = 1200 + Math.random() * 800; // Random elevation between 1200-2000m
-    const slope = Math.random() * 30; // Random slope 0-30 degrees
-    const aspect = Math.random() * 360; // Random aspect 0-360 degrees
-    const floodRisk = this.calculateFloodRisk(elevation, slope);
-
-    return {
-      elevation,
-      slope,
-      aspect,
-      location: {
-        lat: params.lat,
-        lon: params.lon
-      },
-      floodRisk
-    };
-  }
-
   async getFloodRiskAssessment(lat: number, lon: number, radius: number = 1000) {
     return this.getElevationData({ lat, lon, radius });
   }
 
   async getTerrainProfile(bbox: [number, number, number, number]) {
     try {
-      // Get elevation data for multiple points within the bounding box
-      const points = this.generateGridPoints(bbox, 10); // 10x10 grid
+      const points = this.generateGridPoints(bbox, 10);
       const elevationData = await Promise.all(
         points.map(point => this.getElevationData(point))
       );
