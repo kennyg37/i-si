@@ -4,13 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CloudRain, Leaf, Droplets, Sun, Waves, AlertTriangle } from 'lucide-react';
+import { CloudRain, Leaf, Sun, Waves, AlertTriangle, Satellite, Map as MapIcon } from 'lucide-react';
 
 interface LayerControlsProps {
   selectedLayers: string[];
   onLayersChange: (layers: string[]) => void;
   timeRange: string;
   onTimeRangeChange: (range: string) => void;
+  mapStyle: string;
+  onMapStyleChange: (style: string) => void;
 }
 
 const layers = [
@@ -57,11 +59,19 @@ const timeRanges = [
   { value: '5y', label: 'Last 5 years' }
 ];
 
-export function LayerControls({ 
-  selectedLayers, 
-  onLayersChange, 
-  timeRange, 
-  onTimeRangeChange 
+const mapStyles = [
+  { value: 'streets-v12', label: 'Street Map', icon: MapIcon },
+  { value: 'satellite-v9', label: 'Satellite', icon: Satellite },
+  { value: 'satellite-streets-v12', label: 'Hybrid', icon: Satellite },
+];
+
+export function LayerControls({
+  selectedLayers,
+  onLayersChange,
+  timeRange,
+  onTimeRangeChange,
+  mapStyle,
+  onMapStyleChange
 }: LayerControlsProps) {
   const handleLayerToggle = (layerId: string, checked: boolean) => {
     if (checked) {
@@ -73,6 +83,33 @@ export function LayerControls({
 
   return (
     <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Map Style</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-2">
+            {mapStyles.map((style) => {
+              const Icon = style.icon;
+              return (
+                <button
+                  key={style.value}
+                  onClick={() => onMapStyleChange(style.value)}
+                  className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all ${
+                    mapStyle === style.value
+                      ? 'border-primary bg-primary/10'
+                      : 'border-muted hover:border-primary/50'
+                  }`}
+                >
+                  <Icon className="h-5 w-5 mb-1" />
+                  <span className="text-xs font-medium">{style.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Data Layers</CardTitle>

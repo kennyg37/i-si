@@ -6,16 +6,21 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Bot, User, Send, Loader2, Sparkles } from 'lucide-react';
+import { Bot, User, Send, Loader2, Sparkles, Mic, MicOff, Volume2, Download, Share2 } from 'lucide-react';
 
 interface ClimateChatProps {
   agent?: 'climateAnalyst' | 'floodRiskAssessor' | 'agriculturalAdvisor';
+  initialMessage?: string;
 }
 
-export function ClimateChat({ agent = 'climateAnalyst' }: ClimateChatProps) {
+export function ClimateChat({ agent = 'climateAnalyst', initialMessage }: ClimateChatProps) {
   const [selectedAgent, setSelectedAgent] = useState(agent);
   const [inputValue, setInputValue] = useState('');
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
+  const hasSubmittedInitial = useRef(false);
 
   const transport = useMemo(
     () =>
@@ -34,10 +39,61 @@ export function ClimateChat({ agent = 'climateAnalyst' }: ClimateChatProps) {
 
   const isLoading = status === 'streaming' || status === 'submitted';
 
+  // Initialize speech recognition
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = false;
+        recognitionRef.current.interimResults = false;
+        recognitionRef.current.lang = 'en-US';
+
+        recognitionRef.current.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          setInputValue(transcript);
+          setIsListening(false);
+        };
+
+        recognitionRef.current.onerror = () => {
+          setIsListening(false);
+        };
+
+        recognitionRef.current.onend = () => {
+          setIsListening(false);
+        };
+      }
+    }
+  }, []);
+
+  // Auto-submit initial message
+  useEffect(() => {
+    if (initialMessage && !hasSubmittedInitial.current && !isLoading && messages.length === 0) {
+      hasSubmittedInitial.current = true;
+      sendMessage({ text: initialMessage });
+    }
+  }, [initialMessage, isLoading, messages.length, sendMessage]);
+
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Auto-speak assistant responses
+  useEffect(() => {
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.role === 'assistant' && !isLoading) {
+        const text = getMessageText(lastMessage);
+        if (text && 'speechSynthesis' in window) {
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.onstart = () => setIsSpeaking(true);
+          utterance.onend = () => setIsSpeaking(false);
+          window.speechSynthesis.speak(utterance);
+        }
+      }
+    }
+  }, [messages, isLoading]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +101,59 @@ export function ClimateChat({ agent = 'climateAnalyst' }: ClimateChatProps) {
 
     sendMessage({ text: inputValue });
     setInputValue('');
+  };
+
+  const toggleVoiceInput = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    } else {
+      recognitionRef.current?.start();
+      setIsListening(true);
+    }
+  };
+
+  const stopSpeaking = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+  };
+
+  const exportChat = () => {
+    const chatText = messages.map(m => {
+      const text = getMessageText(m);
+      return `${m.role === 'user' ? 'You' : 'AI'}: ${text}`;
+    }).join('\n\n');
+
+    const blob = new Blob([chatText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `climate-chat-${new Date().toISOString().split('T')[0]}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const shareChat = async () => {
+    const chatText = messages.map(m => {
+      const text = getMessageText(m);
+      return `${m.role === 'user' ? 'You' : 'AI'}: ${text}`;
+    }).join('\n\n');
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Climate Chat - I-Si',
+          text: chatText,
+        });
+      } catch (err) {
+        console.log('Share cancelled');
+      }
+    } else {
+      navigator.clipboard.writeText(chatText);
+      alert('Chat copied to clipboard!');
+    }
   };
 
   const agentInfo = {
@@ -220,12 +329,65 @@ export function ClimateChat({ agent = 'climateAnalyst' }: ClimateChatProps) {
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Action Buttons */}
+        {messages.length > 0 && (
+          <div className="flex gap-2 mb-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportChat}
+              className="flex-1"
+              title="Download chat"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={shareChat}
+              className="flex-1"
+              title="Share chat"
+            >
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
+            </Button>
+            {isSpeaking && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={stopSpeaking}
+                className="flex-1"
+                title="Stop speaking"
+              >
+                <Volume2 className="h-4 w-4 mr-2" />
+                Stop
+              </Button>
+            )}
+          </div>
+        )}
+
         {/* Input */}
         <form onSubmit={handleSubmit} className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={toggleVoiceInput}
+            disabled={isLoading}
+            className={isListening ? 'bg-red-500 text-white hover:bg-red-600' : ''}
+            title={isListening ? 'Stop listening' : 'Voice input'}
+          >
+            {isListening ? (
+              <MicOff className="h-4 w-4 animate-pulse" />
+            ) : (
+              <Mic className="h-4 w-4" />
+            )}
+          </Button>
           <input
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Ask about climate data..."
+            placeholder={isListening ? 'Listening...' : 'Ask about climate data...'}
             disabled={isLoading}
             className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
           />

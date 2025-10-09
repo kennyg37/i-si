@@ -3,6 +3,9 @@ import { ArrowRight, Map, BarChart3, Shield, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navigation } from '@/components/navigation';
+import { LiveWeatherWidget } from '@/components/live-weather-widget';
+import { AIRiskPredictor } from '@/components/ai-risk-predictor';
+import { ClimateNotifications } from '@/components/climate-notifications';
 
 export default function Home() {
   return (
@@ -34,6 +37,17 @@ export default function Home() {
                 </Link>
               </Button>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Live Widgets Section */}
+      <section className="py-12 px-4">
+        <div className="container mx-auto">
+          <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            <LiveWeatherWidget />
+            <AIRiskPredictor />
+            <ClimateNotifications />
           </div>
         </div>
       </section>

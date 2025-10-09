@@ -8,22 +8,30 @@ import { MapSkeleton } from '@/components/loading-skeleton';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { useMapStore } from '@/lib/store/map-store';
 import type { Coordinates, GeoLocation, MapClickEvent } from '@/types';
-import { MapPin, X } from 'lucide-react';
+import { MapPin, X, Locate } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import toast from 'react-hot-toast';
 import { sentinelHubAPI } from '@/lib/api/sentinel-hub';
 import { useFloodRiskGrid, floodRiskToGeoJSON } from '@/hooks/use-flood-risk';
+import { useGeolocation } from '@/hooks/use-geolocation';
+import { LocationAnalyticsPanel } from '@/components/location-analytics-panel';
 
 interface MapContainerProps {
   selectedLayers: string[];
   timeRange: string;
+  mapStyle: string;
 }
 
-export function MapContainer({ selectedLayers, timeRange }: MapContainerProps) {
+export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContainerProps) {
   const mapRef = useRef<MapRef>(null);
   const [showPopup, setShowPopup] = useState(false);
   const [popupCoordinates, setPopupCoordinates] = useState<Coordinates | null>(null);
   const [mapboxToken] = useState(process.env.NEXT_PUBLIC_MAPBOX_TOKEN);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [analyticsCoordinates, setAnalyticsCoordinates] = useState<Coordinates | null>(null);
+
+  // Geolocation hook
+  const { coordinates: geoCoordinates, isLoading: isGeoLoading, error: geoError, getLocation } = useGeolocation();
 
   // Calculate minZoom based on active layers
   const minZoom = useMemo(() => {
@@ -94,9 +102,9 @@ export function MapContainer({ selectedLayers, timeRange }: MapContainerProps) {
     // Update store with clicked coordinates
     handleMapClick(clickEvent);
 
-    // Don't show popup - coordinates are shown in bottom-left panel
-    // setPopupCoordinates(coordinates);
-    // setShowPopup(true);
+    // Show analytics panel for clicked location
+    setAnalyticsCoordinates(coordinates);
+    setShowAnalytics(true);
 
     // Animate zoom to clicked location using flyTo
     if (mapRef.current) {
@@ -162,8 +170,57 @@ export function MapContainer({ selectedLayers, timeRange }: MapContainerProps) {
     setSelectedLocation(null);
     setShowPopup(false);
     setPopupCoordinates(null);
+    setShowAnalytics(false);
+    setAnalyticsCoordinates(null);
     toast('Selection cleared', { icon: '🗑️' });
   }, [clearMarkers, setSelectedLocation]);
+
+  // Handle Pin Me button click
+  const handlePinMe = useCallback(() => {
+    getLocation();
+  }, [getLocation]);
+
+  // Handle when geolocation coordinates are received
+  useEffect(() => {
+    if (geoCoordinates && !geoError) {
+      // Update map view
+      if (mapRef.current) {
+        mapRef.current.flyTo({
+          center: [geoCoordinates.lon, geoCoordinates.lat],
+          zoom: 13,
+          duration: 2000,
+          essential: true,
+        });
+      }
+
+      // Set analytics coordinates
+      setAnalyticsCoordinates(geoCoordinates);
+      setShowAnalytics(true);
+
+      // Update store
+      handleMapClick({
+        coordinates: geoCoordinates,
+        timestamp: new Date(),
+      });
+
+      toast.success(
+        `Your location: ${geoCoordinates.lat.toFixed(5)}°, ${geoCoordinates.lon.toFixed(5)}°`,
+        {
+          duration: 3000,
+          icon: '📍',
+        }
+      );
+    }
+  }, [geoCoordinates, geoError, handleMapClick]);
+
+  // Handle geolocation error
+  useEffect(() => {
+    if (geoError) {
+      toast.error(geoError, {
+        duration: 5000,
+      });
+    }
+  }, [geoError]);
 
   // Fit map to Rwanda bounds when loaded
   useEffect(() => {
@@ -222,9 +279,21 @@ export function MapContainer({ selectedLayers, timeRange }: MapContainerProps) {
   return (
     <ErrorBoundary>
       <div className="w-full h-full">
-        {/* Clear Selection Button */}
-        {(selectedLocation || markers.length > 0) && (
-          <div className="absolute top-4 right-4 z-10">
+        {/* Pin Me Button */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex gap-2">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handlePinMe}
+            disabled={isGeoLoading}
+            className="shadow-lg"
+          >
+            <Locate className={`h-4 w-4 mr-2 ${isGeoLoading ? 'animate-spin' : ''}`} />
+            {isGeoLoading ? 'Locating...' : 'Pin Me'}
+          </Button>
+
+          {/* Clear Selection Button */}
+          {(selectedLocation || markers.length > 0 || showAnalytics) && (
             <Button
               variant="secondary"
               size="sm"
@@ -232,9 +301,21 @@ export function MapContainer({ selectedLayers, timeRange }: MapContainerProps) {
               className="shadow-lg"
             >
               <X className="h-4 w-4 mr-2" />
-              Clear Selection
+              Clear
             </Button>
-          </div>
+          )}
+        </div>
+
+        {/* Location Analytics Panel */}
+        {showAnalytics && analyticsCoordinates && (
+          <LocationAnalyticsPanel
+            lat={analyticsCoordinates.lat}
+            lon={analyticsCoordinates.lon}
+            onClose={() => {
+              setShowAnalytics(false);
+              setAnalyticsCoordinates(null);
+            }}
+          />
         )}
 
         {/* Coordinate Display */}
@@ -270,7 +351,7 @@ export function MapContainer({ selectedLayers, timeRange }: MapContainerProps) {
           minZoom={minZoom}
           maxZoom={18}
           style={{ width: '100%', height: '100%' }}
-          mapStyle="mapbox://styles/mapbox/streets-v12"
+          mapStyle={`mapbox://styles/mapbox/${mapStyle}`}
           onLoad={handleMapLoad}
           onClick={onMapClick}
           onMove={handleMove}

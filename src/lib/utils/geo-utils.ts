@@ -169,11 +169,11 @@ export const RWANDA_CITIES = {
   kigali: { name: 'Kigali', lat: -1.9441, lon: 30.0619 },
   butare: { name: 'Butare', lat: -2.5967, lon: 29.7394 },
   gisenyi: { name: 'Gisenyi', lat: -1.6967, lon: 29.2567 },
-  ruhengeri: { name: 'Ruhengeri', lat: -1.5000, lon: 29.6333 },
+  ruhengeri: { name: 'Musanze', lat: -1.5000, lon: 29.6333 },
   byumba: { name: 'Byumba', lat: -1.5833, lon: 30.0667 },
-  cyangugu: { name: 'Cyangugu', lat: -2.4833, lon: 28.9000 },
-  kibuye: { name: 'Kibuye', lat: -2.0667, lon: 29.3500 },
-  kibungo: { name: 'Kibungo', lat: -2.1667, lon: 30.5500 }
+  cyangugu: { name: 'Rusizi', lat: -2.4833, lon: 28.9000 },
+  kibuye: { name: 'Karongi', lat: -2.0667, lon: 29.3500 },
+  kibungo: { name: 'Kirehe', lat: -2.1667, lon: 30.5500 }
 };
 
 // Check if point is within Rwanda

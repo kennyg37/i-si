@@ -4,6 +4,7 @@ import "./globals.css";
 import { QueryProvider } from "@/lib/providers/query-provider";
 import { ThemeProvider } from "@/lib/providers/theme-provider";
 import { Toaster } from "react-hot-toast";
+import { GlobalAIAssistant } from "@/components/global-ai-assistant";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -51,6 +52,7 @@ export default function RootLayout({
         >
           <QueryProvider>
             {children}
+            <GlobalAIAssistant />
             <Toaster
               position="top-right"
               toastOptions={{

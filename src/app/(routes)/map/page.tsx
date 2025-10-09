@@ -13,11 +13,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 export default function MapPage() {
   const [selectedLayers, setSelectedLayers] = useState<string[]>(['ndvi']);
   const [selectedTimeRange, setSelectedTimeRange] = useState('30d');
+  const [mapStyle, setMapStyle] = useState('streets-v12');
 
   return (
     <div className="min-h-screen bg-backgroun pb-10">
       <Navigation />
-      
+
       <div className="flex h-[calc(100vh-4rem)] max-h-[calc(100vh-4rem)]">
         {/* Sidebar */}
         <div className="w-80 border-r bg-background overflow-y-auto">
@@ -42,6 +43,8 @@ export default function MapPage() {
                   onLayersChange={setSelectedLayers}
                   timeRange={selectedTimeRange}
                   onTimeRangeChange={setSelectedTimeRange}
+                  mapStyle={mapStyle}
+                  onMapStyleChange={setMapStyle}
                 />
                 <MapLegend selectedLayers={selectedLayers} />
               </TabsContent>
@@ -62,6 +65,7 @@ export default function MapPage() {
           <MapContainer
             selectedLayers={selectedLayers}
             timeRange={selectedTimeRange}
+            mapStyle={mapStyle}
           />
         </div>
       </div>

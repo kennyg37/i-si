@@ -4,7 +4,9 @@
       "Bash(npm install:*)",
       "Bash(npm uninstall:*)",
       "Bash(cat:*)",
-      "Bash(curl -s \"http://localhost:3000/api/proxy/nasa-power?endpoint=temporal/daily/point&parameters=T2M&latitude=-1.9403&longitude=29.8739&start=20241001&end=20241008&community=RE\")"
+      "Bash(curl -s \"http://localhost:3000/api/proxy/nasa-power?endpoint=temporal/daily/point&parameters=T2M&latitude=-1.9403&longitude=29.8739&start=20241001&end=20241008&community=RE\")",
+      "Bash(npm run build:*)",
+      "Bash(wc:*)"
     ],
     "deny": [],
     "ask": []
