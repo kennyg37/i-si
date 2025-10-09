@@ -1,17 +1,17 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import Map, { MapRef, Source, Layer } from 'react-map-gl/mapbox';
 import type { MapMouseEvent } from 'react-map-gl/mapbox';
-import { RWANDA_CENTER, RWANDA_BOUNDS, getRwandaZoomLevel, bboxToArray } from '@/lib/utils/geo-utils';
-import { MapSkeleton } from '@/components/loading-skeleton';
+import { RWANDA_CENTER, RWANDA_BOUNDS, getRwandaZoomLevel } from '@/lib/utils/geo-utils';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { useMapStore } from '@/lib/store/map-store';
-import type { Coordinates, GeoLocation, MapClickEvent } from '@/types';
+import type { Coordinates, MapClickEvent } from '@/types';
 import { MapPin, X, Locate, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import toast from 'react-hot-toast';
 import { sentinelHubAPI } from '@/lib/api/sentinel-hub';
+import { NasaGibsClient } from '@/lib/api/nasa-gibs';
 import { useGeolocation } from '@/hooks/use-geolocation';
 import { LocationAnalyticsPanel } from '@/components/location-analytics-panel';
 import { ClimateRiskPopup } from '@/components/ClimateRiskPopup';
@@ -37,8 +37,14 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
   // Track current zoom level for layer visibility management
   const [currentZoom, setCurrentZoom] = useState<number>(getRwandaZoomLevel());
 
-  // NDVI max zoom level (200m/pixel is approximately zoom level 12-13)
-  const NDVI_MAX_ZOOM = 13;
+  // Layer max zoom levels
+  const SENTINEL_MAX_ZOOM = 13; // Sentinel-2 layers
+  const VIIRS_MAX_ZOOM = 10; // VIIRS flood detection
+  const MODIS_MAX_ZOOM = 8; // MODIS flood detection
+  const NASA_GIBS_MAX_ZOOM = 10; // NASA GIBS layers
+
+  // NASA GIBS client instance
+  const nasaGibsClient = new NasaGibsClient();
 
   // Zustand store
   const {
@@ -244,14 +250,23 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
   // Calculate layer visibility
   const isLayerVisible = useCallback((layerId: string) => {
     const isSelected = selectedLayers.includes(layerId);
-    const isWithinZoomLimit = currentZoom <= NDVI_MAX_ZOOM;
-
-    if (layerId === 'ndvi') {
-      return isSelected && isWithinZoomLimit;
+    
+    // Check zoom level limits for different layer types
+    let isWithinZoomLimit = true;
+    if (layerId === 'ndvi' || layerId === 'moisture-index' || layerId === 'false-color' || layerId === 'ndwi') {
+      isWithinZoomLimit = currentZoom <= SENTINEL_MAX_ZOOM;
+    } else if (layerId === 'viirs-flood') {
+      isWithinZoomLimit = currentZoom <= VIIRS_MAX_ZOOM;
+    } else if (layerId === 'modis-flood') {
+      isWithinZoomLimit = currentZoom <= MODIS_MAX_ZOOM;
+    } else if (layerId === 'nasa-viirs-flood' || layerId === 'nasa-modis-flood' || 
+               layerId === 'nasa-soil-moisture' || layerId === 'nasa-land-temp' || 
+               layerId === 'nasa-ndvi' || layerId === 'nasa-rainfall-anomaly') {
+      isWithinZoomLimit = currentZoom <= NASA_GIBS_MAX_ZOOM;
     }
 
-    return isSelected;
-  }, [selectedLayers, currentZoom, NDVI_MAX_ZOOM]);
+    return isSelected && isWithinZoomLimit;
+  }, [selectedLayers, currentZoom, SENTINEL_MAX_ZOOM, VIIRS_MAX_ZOOM, MODIS_MAX_ZOOM, NASA_GIBS_MAX_ZOOM]);
 
   if (!mapboxToken) {
     return (
@@ -308,13 +323,26 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
           )}
         </div>
 
-        {/* Zoom level warning for NDVI layer */}
-        {selectedLayers.includes('ndvi') && currentZoom > NDVI_MAX_ZOOM && (
+        {/* Zoom level warnings for layers */}
+        {selectedLayers.some(layer => 
+          (layer === 'ndvi' && currentZoom > SENTINEL_MAX_ZOOM) ||
+          (layer === 'moisture-index' && currentZoom > SENTINEL_MAX_ZOOM) ||
+          (layer === 'false-color' && currentZoom > SENTINEL_MAX_ZOOM) ||
+          (layer === 'ndwi' && currentZoom > SENTINEL_MAX_ZOOM) ||
+          (layer === 'viirs-flood' && currentZoom > VIIRS_MAX_ZOOM) ||
+          (layer === 'modis-flood' && currentZoom > MODIS_MAX_ZOOM) ||
+          (layer === 'nasa-viirs-flood' && currentZoom > NASA_GIBS_MAX_ZOOM) ||
+          (layer === 'nasa-modis-flood' && currentZoom > NASA_GIBS_MAX_ZOOM) ||
+          (layer === 'nasa-soil-moisture' && currentZoom > NASA_GIBS_MAX_ZOOM) ||
+          (layer === 'nasa-land-temp' && currentZoom > NASA_GIBS_MAX_ZOOM) ||
+          (layer === 'nasa-ndvi' && currentZoom > NASA_GIBS_MAX_ZOOM) ||
+          (layer === 'nasa-rainfall-anomaly' && currentZoom > NASA_GIBS_MAX_ZOOM)
+        ) && (
           <div className="absolute top-20 left-1/2 -translate-x-1/2 z-10 bg-amber-500/95 backdrop-blur-sm border border-amber-600 rounded-lg p-3 shadow-lg max-w-md">
             <div className="flex items-center gap-2 text-sm text-amber-950">
               <AlertTriangle className="h-4 w-4 flex-shrink-0" />
               <span>
-                NDVI layer hidden - zoom out to see data (max zoom level: 14)
+                Some layers hidden - zoom out to see data
               </span>
             </div>
           </div>
@@ -337,7 +365,7 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
           <ClimateRiskPopup
             coordinates={popupCoordinates}
             onClose={handleClosePopup}
-            timeRange={timeRange as any}
+            timeRange={timeRange}
           />
         )}
 
@@ -388,12 +416,12 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
           {/* Always render sources, control visibility via paint properties */}
 
           {/* NDVI Layer - Sentinel Hub */}
-          {sentinelHubAPI.isConfigured() && sentinelHubAPI.getXYZTileURL() && (
+          {sentinelHubAPI.isConfigured() && sentinelHubAPI.getNDVITileURL() && (
             <Source
               key="ndvi-source"
               id="ndvi"
               type="raster"
-              tiles={[sentinelHubAPI.getXYZTileURL()]}
+              tiles={[sentinelHubAPI.getNDVITileURL()]}
               tileSize={256}
               scheme="xyz"
             >
@@ -408,7 +436,7 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
           )}
 
           {/* NDVI Placeholder when Sentinel Hub not configured */}
-          {(!sentinelHubAPI.isConfigured() || !sentinelHubAPI.getXYZTileURL()) && (
+          {(!sentinelHubAPI.isConfigured() || !sentinelHubAPI.getNDVITileURL()) && (
             <Source
               key="ndvi-placeholder-source"
               id="ndvi-placeholder"
@@ -426,6 +454,176 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
               />
             </Source>
           )}
+
+          {/* Moisture Index Layer - Sentinel Hub */}
+          {sentinelHubAPI.isConfigured() && sentinelHubAPI.getMoistureIndexTileURL() && (
+            <Source
+              key="moisture-index-source"
+              id="moisture-index"
+              type="raster"
+              tiles={[sentinelHubAPI.getMoistureIndexTileURL()]}
+              tileSize={256}
+              scheme="xyz"
+            >
+              <Layer
+                id="moisture-index-layer"
+                type="raster"
+                paint={{
+                  'raster-opacity': isLayerVisible('moisture-index') ? 0.7 : 0,
+                }}
+              />
+            </Source>
+          )}
+
+          {/* False Color Agriculture Layer - Sentinel Hub */}
+          {sentinelHubAPI.isConfigured() && sentinelHubAPI.getFalseColorTileURL() && (
+            <Source
+              key="false-color-source"
+              id="false-color"
+              type="raster"
+              tiles={[sentinelHubAPI.getFalseColorTileURL()]}
+              tileSize={256}
+              scheme="xyz"
+            >
+              <Layer
+                id="false-color-layer"
+                type="raster"
+                paint={{
+                  'raster-opacity': isLayerVisible('false-color') ? 0.7 : 0,
+                }}
+              />
+            </Source>
+          )}
+
+          {/* NDWI Water Detection Layer - Sentinel Hub */}
+          {sentinelHubAPI.isConfigured() && sentinelHubAPI.getNDWITileURL() && (
+            <Source
+              key="ndwi-source"
+              id="ndwi"
+              type="raster"
+              tiles={[sentinelHubAPI.getNDWITileURL()]}
+              tileSize={256}
+              scheme="xyz"
+            >
+              <Layer
+                id="ndwi-layer"
+                type="raster"
+                paint={{
+                  'raster-opacity': isLayerVisible('ndwi') ? 0.7 : 0,
+                }}
+              />
+            </Source>
+          )}
+
+          {/* NASA GIBS Layers */}
+          
+          {/* VIIRS Flood Detection Layer - NASA GIBS */}
+          <Source
+            key="nasa-viirs-flood-source"
+            id="nasa-viirs-flood"
+            type="raster"
+            tiles={[nasaGibsClient.getFloodTileURL('viirs_3day')]}
+            tileSize={256}
+            scheme="xyz"
+          >
+            <Layer
+              id="nasa-viirs-flood-layer"
+              type="raster"
+              paint={{
+                'raster-opacity': isLayerVisible('nasa-viirs-flood') ? 0.8 : 0,
+              }}
+            />
+          </Source>
+
+          {/* MODIS Flood Detection Layer - NASA GIBS */}
+          <Source
+            key="nasa-modis-flood-source"
+            id="nasa-modis-flood"
+            type="raster"
+            tiles={[nasaGibsClient.getFloodTileURL('modis_3day')]}
+            tileSize={256}
+            scheme="xyz"
+          >
+            <Layer
+              id="nasa-modis-flood-layer"
+              type="raster"
+              paint={{
+                'raster-opacity': isLayerVisible('nasa-modis-flood') ? 0.8 : 0,
+              }}
+            />
+          </Source>
+
+          {/* Soil Moisture Layer - NASA GIBS */}
+          <Source
+            key="nasa-soil-moisture-source"
+            id="nasa-soil-moisture"
+            type="raster"
+            tiles={[nasaGibsClient.getSoilMoistureTileURL()]}
+            tileSize={256}
+            scheme="xyz"
+          >
+            <Layer
+              id="nasa-soil-moisture-layer"
+              type="raster"
+              paint={{
+                'raster-opacity': isLayerVisible('nasa-soil-moisture') ? 0.7 : 0,
+              }}
+            />
+          </Source>
+
+          {/* Land Surface Temperature Layer - NASA GIBS */}
+          <Source
+            key="nasa-land-temp-source"
+            id="nasa-land-temp"
+            type="raster"
+            tiles={[nasaGibsClient.getLandTempTileURL()]}
+            tileSize={256}
+            scheme="xyz"
+          >
+            <Layer
+              id="nasa-land-temp-layer"
+              type="raster"
+              paint={{
+                'raster-opacity': isLayerVisible('nasa-land-temp') ? 0.7 : 0,
+              }}
+            />
+          </Source>
+
+          {/* NDVI Vegetation Layer - NASA GIBS */}
+          <Source
+            key="nasa-ndvi-source"
+            id="nasa-ndvi"
+            type="raster"
+            tiles={[nasaGibsClient.getNDVITileURL()]}
+            tileSize={256}
+            scheme="xyz"
+          >
+            <Layer
+              id="nasa-ndvi-layer"
+              type="raster"
+              paint={{
+                'raster-opacity': isLayerVisible('nasa-ndvi') ? 0.7 : 0,
+              }}
+            />
+          </Source>
+
+          {/* Rainfall Anomaly Layer - NASA GIBS */}
+          <Source
+            key="nasa-rainfall-anomaly-source"
+            id="nasa-rainfall-anomaly"
+            type="raster"
+            tiles={[nasaGibsClient.getRainfallAnomalyTileURL()]}
+            tileSize={256}
+            scheme="xyz"
+          >
+            <Layer
+              id="nasa-rainfall-anomaly-layer"
+              type="raster"
+              paint={{
+                'raster-opacity': isLayerVisible('nasa-rainfall-anomaly') ? 0.7 : 0,
+              }}
+            />
+          </Source>
 
           {/* Bold country borders layer */}
           <Source

@@ -16,10 +16,68 @@ interface LayerControlsProps {
 }
 
 const layers = [
+  // Sentinel Hub Layers
   {
     id: 'ndvi',
     name: 'Vegetation Health (NDVI)',
-    description: 'Satellite-based vegetation health monitoring'
+    description: 'Satellite-based vegetation health monitoring',
+    category: 'Sentinel Hub'
+  },
+  {
+    id: 'moisture-index',
+    name: 'Moisture Index',
+    description: 'Soil moisture and drought monitoring',
+    category: 'Sentinel Hub'
+  },
+  {
+    id: 'false-color',
+    name: 'False Color Agriculture',
+    description: 'Enhanced vegetation and land use visualization',
+    category: 'Sentinel Hub'
+  },
+  {
+    id: 'ndwi',
+    name: 'Water Detection (NDWI)',
+    description: 'Water body and wetland identification',
+    category: 'Sentinel Hub'
+  },
+  
+  // NASA GIBS Layers
+  {
+    id: 'nasa-viirs-flood',
+    name: 'NASA VIIRS Flood Detection (3-Day)',
+    description: 'VIIRS combined flood detection with 3-day composite for better accuracy',
+    category: 'NASA GIBS'
+  },
+  {
+    id: 'nasa-modis-flood',
+    name: 'NASA MODIS Flood Detection (3-Day)',
+    description: 'MODIS combined flood detection with 3-day composite for better accuracy',
+    category: 'NASA GIBS'
+  },
+  {
+    id: 'nasa-soil-moisture',
+    name: 'NASA Soil Moisture',
+    description: 'SMAP soil moisture for agricultural monitoring',
+    category: 'NASA GIBS'
+  },
+  {
+    id: 'nasa-land-temp',
+    name: 'NASA Land Surface Temperature',
+    description: 'MODIS land surface temperature for drought monitoring',
+    category: 'NASA GIBS'
+  },
+  {
+    id: 'nasa-ndvi',
+    name: 'NASA NDVI Vegetation',
+    description: 'MODIS vegetation health index',
+    category: 'NASA GIBS'
+  },
+  {
+    id: 'nasa-rainfall-anomaly',
+    name: 'NASA Rainfall Anomaly',
+    description: 'MERRA-2 precipitation anomaly for drought assessment',
+    category: 'NASA GIBS'
   }
 ];
 
@@ -86,28 +144,40 @@ export function LayerControls({
         <CardHeader>
           <CardTitle className="text-lg">Data Layers</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {layers.map((layer) => {
-            const isSelected = selectedLayers.includes(layer.id);
+        <CardContent className="space-y-4">
+          {['Sentinel Hub', 'NASA GIBS'].map((category) => {
+            const categoryLayers = layers.filter(layer => layer.category === category);
+            if (categoryLayers.length === 0) return null;
 
             return (
-              <div key={layer.id} className="flex items-start space-x-3">
-                <Checkbox
-                  id={layer.id}
-                  checked={isSelected}
-                  onCheckedChange={(checked) => handleLayerToggle(layer.id, checked as boolean)}
-                />
-                <div className="flex-1 min-w-0">
-                  <label
-                    htmlFor={layer.id}
-                    className="cursor-pointer block"
-                  >
-                    <span className="text-sm font-medium">{layer.name}</span>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {layer.description}
-                    </p>
-                  </label>
-                </div>
+              <div key={category} className="space-y-3">
+                <h4 className="text-sm font-semibold text-muted-foreground border-b pb-1">
+                  {category}
+                </h4>
+                {categoryLayers.map((layer) => {
+                  const isSelected = selectedLayers.includes(layer.id);
+
+                  return (
+                    <div key={layer.id} className="flex items-start space-x-3">
+                      <Checkbox
+                        id={layer.id}
+                        checked={isSelected}
+                        onCheckedChange={(checked) => handleLayerToggle(layer.id, checked as boolean)}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <label
+                          htmlFor={layer.id}
+                          className="cursor-pointer block"
+                        >
+                          <span className="text-sm font-medium">{layer.name}</span>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {layer.description}
+                          </p>
+                        </label>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             );
           })}
