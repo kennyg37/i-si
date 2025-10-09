@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function MapPage() {
-  const [selectedLayers, setSelectedLayers] = useState<string[]>(['ndvi']);
+  const [selectedLayers, setSelectedLayers] = useState<string[]>([]);
   const [selectedTimeRange, setSelectedTimeRange] = useState('30d');
   const [mapStyle, setMapStyle] = useState('streets-v12');
 

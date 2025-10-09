@@ -6,6 +6,7 @@ const SENTINEL_CLIENT_ID = process.env.NEXT_PUBLIC_SENTINEL_CLIENT_ID;
 const SENTINEL_CLIENT_SECRET = process.env.NEXT_PUBLIC_SENTINEL_CLIENT_SECRET;
 const SENTINEL_NDVI_LAYER_ID = process.env.NEXT_PUBLIC_SENTINEL_NDVI_LAYER_ID;
 const SENTINEL_FLOOD_LAYER_ID = process.env.NEXT_PUBLIC_SENTINEL_FLOOD_LAYER_ID;
+const SENTINEL_MOISTURE_LAYER_ID = process.env.NEXT_PUBLIC_SENTINEL_MOISTURE_LAYER_ID;
 
 export class SentinelHubAPI {
   private instanceId: string;
@@ -13,6 +14,7 @@ export class SentinelHubAPI {
   private clientSecret: string;
   private ndviLayerId: string;
   private floodLayerId: string;
+  private moistureLayerId: string;
   private baseURL = 'https://services.sentinel-hub.com/api/v1';
 
   constructor() {
@@ -21,14 +23,14 @@ export class SentinelHubAPI {
     this.clientSecret = SENTINEL_CLIENT_SECRET || '';
     this.ndviLayerId = SENTINEL_NDVI_LAYER_ID || '';
     this.floodLayerId = SENTINEL_FLOOD_LAYER_ID || '';
+    this.moistureLayerId = SENTINEL_MOISTURE_LAYER_ID || '';
   }
 
   private async getAccessToken(): Promise<string | null> {
     try {
-      const response = await axios.post('https://services.sentinel-hub.com/oauth/token', {
-        client_id: this.clientId,
-        client_secret: this.clientSecret,
-        grant_type: 'client_credentials'
+      // Use proxy to avoid CORS issues
+      const response = await axios.post('/api/proxy/sentinel-hub', {
+        action: 'token'
       });
 
       return response.data.access_token;
@@ -60,47 +62,48 @@ export class SentinelHubAPI {
         }
       `;
 
+      // Use proxy to avoid CORS issues
       const response = await axios.post(
-        `${this.baseURL}/process`,
+        '/api/proxy/sentinel-hub',
         {
-          input: {
-            bounds: {
-              bbox: params.bbox,
-              properties: {
-                crs: 'http://www.opengis.net/def/crs/EPSG/0/4326'
-              }
-            },
-            data: [
-              {
-                type: 'sentinel-2-l2a',
-                dataFilter: {
-                  timeRange: {
-                    from: params.time.split('/')[0],
-                    to: params.time.split('/')[1]
+          action: 'process',
+          token,
+          requestBody: {
+            input: {
+              bounds: {
+                bbox: params.bbox,
+                properties: {
+                  crs: 'http://www.opengis.net/def/crs/EPSG/0/4326'
+                }
+              },
+              data: [
+                {
+                  type: 'sentinel-2-l2a',
+                  dataFilter: {
+                    timeRange: {
+                      from: params.time.split('/')[0],
+                      to: params.time.split('/')[1]
+                    }
                   }
                 }
-              }
-            ]
-          },
-          output: {
-            width: params.width,
-            height: params.height,
-            responses: [
-              {
-                identifier: 'default',
-                format: {
-                  type: 'image/png'
+              ]
+            },
+            output: {
+              width: params.width,
+              height: params.height,
+              responses: [
+                {
+                  identifier: 'default',
+                  format: {
+                    type: 'image/png'
+                  }
                 }
-              }
-            ]
-          },
-          evalscript: evalscript
+              ]
+            },
+            evalscript: evalscript
+          }
         },
         {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
           timeout: 60000
         }
       );
@@ -259,6 +262,34 @@ export class SentinelHubAPI {
    */
   isFloodConfigured(): boolean {
     return !!(this.instanceId && this.clientId && this.clientSecret && this.floodLayerId);
+  }
+
+  /**
+   * Get tile URL for Sentinel-2 Moisture Stress Index (MSI) layer
+   * Useful for drought monitoring and agricultural disaster prevention
+   * MSI = (SWIR1 - NIR) / (SWIR1 + NIR) using bands B11 and B8A
+   */
+  getMoistureTileURL(): string {
+    if (!this.instanceId) {
+      console.warn('Sentinel Hub Instance ID not configured');
+      return '';
+    }
+
+    if (!this.moistureLayerId) {
+      console.warn('Sentinel Hub Moisture Layer ID not configured. Please create a Sentinel-2 layer at https://apps.sentinel-hub.com/dashboard/#/configurations');
+      return '';
+    }
+
+    const wmtsBaseURL = 'https://services.sentinel-hub.com/ogc/wmts';
+
+    return `${wmtsBaseURL}/${this.instanceId}?layer=${this.moistureLayerId}&tilematrixset=PopularWebMercator256&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix={z}&TileCol={x}&TileRow={y}&time=2023-01-01/2024-12-31`;
+  }
+
+  /**
+   * Check if moisture layer is configured
+   */
+  isMoistureConfigured(): boolean {
+    return !!(this.instanceId && this.clientId && this.clientSecret && this.moistureLayerId);
   }
 }
 

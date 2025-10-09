@@ -1,4 +1,4 @@
-import { chirpsAPI } from './chirps';
+import { nasaPowerAPI } from './nasa-power';
 import { srtmAPI } from './srtm';
 import type { Coordinates } from '@/types';
 
@@ -28,7 +28,7 @@ export interface FloodRiskData {
 export class FloodRiskAPI {
   /**
    * Calculate comprehensive flood risk score for a location
-   * Combines CHIRPS rainfall data with SRTM elevation/slope analysis
+   * Combines NASA POWER rainfall data with SRTM elevation/slope analysis
    */
   async calculateFloodRisk(
     lat: number,
@@ -39,26 +39,37 @@ export class FloodRiskAPI {
     try {
       // Default to last 30 days if not specified
       if (!endDate) {
-        endDate = new Date().toISOString().split('T')[0];
+        endDate = new Date().toISOString().split('T')[0].replace(/-/g, '');
       }
       if (!startDate) {
         const date = new Date();
         date.setDate(date.getDate() - 30);
-        startDate = date.toISOString().split('T')[0];
+        startDate = date.toISOString().split('T')[0].replace(/-/g, '');
       }
 
-      // Fetch data in parallel
+      // Fetch data in parallel using NASA POWER API
       const [rainfallData, elevationData] = await Promise.all([
-        chirpsAPI.getRainfallTimeSeries(lat, lon, startDate, endDate),
+        nasaPowerAPI.getRainfallData(lat, lon, startDate, endDate),
         srtmAPI.getElevationData({ lat, lon })
       ]);
 
       if (!rainfallData || !elevationData) {
+        console.log('Failed to fetch rainfall or elevation data');
         return null;
       }
 
-      // Calculate rainfall factors
-      const precipValues = Object.values(rainfallData.data || {}).map((d: any) => d.precipitation || 0);
+      // Calculate rainfall factors from NASA POWER data
+      const precipValues = rainfallData.properties?.parameter?.PRECTOTCORR
+        ? Object.values(rainfallData.properties.parameter.PRECTOTCORR).filter(
+            (p): p is number => typeof p === 'number' && p >= 0
+          )
+        : [];
+
+      if (precipValues.length === 0) {
+        console.log('No valid precipitation data');
+        return null;
+      }
+
       const recentPrecip = precipValues.slice(-7); // Last 7 days
       const avgRecent = recentPrecip.reduce((a, b) => a + b, 0) / recentPrecip.length;
       const avgTotal = precipValues.reduce((a, b) => a + b, 0) / precipValues.length;
@@ -118,27 +129,33 @@ export class FloodRiskAPI {
 
   /**
    * Calculate rainfall risk contribution (0-1)
+   * Uses both absolute rainfall and relative anomaly
    */
   private calculateRainfallRisk(recentRainfall: number, anomaly: number): number {
-    // High recent rainfall increases risk
     let rainfallRisk = 0;
 
     // Absolute rainfall contribution (mm/day)
-    if (recentRainfall > 50) {
-      rainfallRisk += 0.5; // Heavy rain
-    } else if (recentRainfall > 30) {
-      rainfallRisk += 0.3; // Moderate rain
+    // Rwanda typical daily rainfall: 2-5mm, heavy: >10mm, extreme: >20mm
+    if (recentRainfall > 25) {
+      rainfallRisk += 0.6; // Extreme rain - very high flood risk
     } else if (recentRainfall > 15) {
-      rainfallRisk += 0.15; // Light rain
+      rainfallRisk += 0.4; // Heavy rain - high risk
+    } else if (recentRainfall > 10) {
+      rainfallRisk += 0.25; // Moderate-heavy rain
+    } else if (recentRainfall > 5) {
+      rainfallRisk += 0.1; // Light-moderate rain
     }
 
-    // Rainfall anomaly contribution
-    if (anomaly > 0.5) {
-      rainfallRisk += 0.5; // Much higher than average
-    } else if (anomaly > 0.25) {
-      rainfallRisk += 0.3; // Higher than average
-    } else if (anomaly > 0) {
-      rainfallRisk += 0.1; // Slightly higher than average
+    // Rainfall anomaly contribution (comparing to historical average)
+    // Positive anomaly means more rain than normal
+    if (anomaly > 0.8) {
+      rainfallRisk += 0.4; // Much higher than average - saturated soil
+    } else if (anomaly > 0.5) {
+      rainfallRisk += 0.3; // Significantly higher
+    } else if (anomaly > 0.3) {
+      rainfallRisk += 0.2; // Higher than average
+    } else if (anomaly > 0.1) {
+      rainfallRisk += 0.1; // Slightly higher
     }
 
     return Math.min(1, rainfallRisk);
@@ -146,42 +163,52 @@ export class FloodRiskAPI {
 
   /**
    * Calculate elevation risk contribution (0-1)
+   * Lower elevations accumulate water, higher elevations drain better
    */
   private calculateElevationRisk(elevation: number): number {
-    // Lower elevation = higher flood risk
-    // Rwanda elevation range: ~900m to ~4500m
-    // High risk below 1200m, low risk above 2000m
+    // Rwanda elevation range: ~900m (valleys/lakes) to ~4500m (mountains)
+    // Lake Kivu: ~1460m, Kigali: ~1500-1600m
+    // High flood risk in low-lying areas near water bodies
 
-    if (elevation < 1000) {
-      return 1.0; // Very high risk
-    } else if (elevation < 1200) {
-      return 0.7; // High risk
-    } else if (elevation < 1500) {
-      return 0.4; // Moderate risk
-    } else if (elevation < 2000) {
-      return 0.2; // Low risk
+    if (elevation < 1300) {
+      return 0.9; // Very high risk - near water level
+    } else if (elevation < 1450) {
+      return 0.7; // High risk - low-lying valleys
+    } else if (elevation < 1600) {
+      return 0.5; // Moderate risk - typical inhabited areas
+    } else if (elevation < 1800) {
+      return 0.3; // Lower risk - elevated areas
+    } else if (elevation < 2200) {
+      return 0.15; // Low risk - highlands
     } else {
-      return 0.05; // Very low risk
+      return 0.05; // Very low risk - mountains
     }
   }
 
   /**
    * Calculate slope risk contribution (0-1)
+   * Flat areas accumulate water, steep areas drain quickly
    */
   private calculateSlopeRisk(slope: number): number {
-    // Lower slope = higher flood risk (water accumulates)
     // Slope in degrees
+    // 0-1°: Flat (flood-prone)
+    // 1-3°: Very gentle (water pools)
+    // 3-8°: Gentle (some drainage)
+    // 8-15°: Moderate (good drainage)
+    // >15°: Steep (rapid drainage, but erosion risk)
 
-    if (slope < 2) {
-      return 1.0; // Flat areas - very high risk
-    } else if (slope < 5) {
-      return 0.7; // Gentle slope - high risk
+    if (slope < 1) {
+      return 1.0; // Completely flat - water pools
+    } else if (slope < 3) {
+      return 0.8; // Very gentle - high accumulation
+    } else if (slope < 6) {
+      return 0.5; // Gentle - moderate accumulation
     } else if (slope < 10) {
-      return 0.4; // Moderate slope - moderate risk
-    } else if (slope < 20) {
-      return 0.2; // Steep slope - low risk
+      return 0.3; // Moderate - some drainage
+    } else if (slope < 15) {
+      return 0.15; // Steeper - good drainage
     } else {
-      return 0.05; // Very steep - very low risk
+      return 0.05; // Very steep - rapid drainage
     }
   }
 
@@ -194,22 +221,36 @@ export class FloodRiskAPI {
     gridSize: number = 10
   ): Promise<Array<FloodRiskData>> {
     const [minLon, minLat, maxLon, maxLat] = bbox;
-    const risks: Array<FloodRiskData> = [];
 
     const latStep = (maxLat - minLat) / gridSize;
     const lonStep = (maxLon - minLon) / gridSize;
 
-    // Calculate risk for each grid point
+    // Generate all coordinates
+    const coordinates: Array<{ lat: number; lon: number }> = [];
     for (let i = 0; i <= gridSize; i++) {
       for (let j = 0; j <= gridSize; j++) {
         const lat = minLat + i * latStep;
         const lon = minLon + j * lonStep;
-
-        const risk = await this.calculateFloodRisk(lat, lon);
-        if (risk) {
-          risks.push(risk);
-        }
+        coordinates.push({ lat, lon });
       }
+    }
+
+    // Calculate risk for all points in parallel with batching to avoid overwhelming the API
+    const batchSize = 5;
+    const risks: Array<FloodRiskData> = [];
+
+    for (let i = 0; i < coordinates.length; i += batchSize) {
+      const batch = coordinates.slice(i, i + batchSize);
+      const batchResults = await Promise.all(
+        batch.map(({ lat, lon }) =>
+          this.calculateFloodRisk(lat, lon).catch(err => {
+            console.error(`Failed to calculate risk for ${lat}, ${lon}:`, err);
+            return null;
+          })
+        )
+      );
+
+      risks.push(...batchResults.filter((r): r is FloodRiskData => r !== null));
     }
 
     return risks;

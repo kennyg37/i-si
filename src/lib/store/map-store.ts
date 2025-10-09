@@ -58,7 +58,7 @@ export const useMapStore = create<MapState>()(
         clickedCoordinates: null,
         viewport: RWANDA_DEFAULT_VIEWPORT,
         markers: [],
-        activeLayers: ['rainfall'],
+        activeLayers: [],
         isMapLoaded: false,
         hoveredFeature: null,
 
@@ -203,7 +203,7 @@ export const useMapStore = create<MapState>()(
               clickedCoordinates: null,
               viewport: RWANDA_DEFAULT_VIEWPORT,
               markers: [],
-              activeLayers: ['rainfall'],
+              activeLayers: [],
               hoveredFeature: null,
             },
             false,

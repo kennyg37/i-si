@@ -109,22 +109,51 @@ export function useDroughtRisk(
         const spi = precipAnomaly;
 
         // Calculate drought risk score (0-1)
+        // Drought is primarily driven by precipitation deficit, exacerbated by high temperatures
         let riskScore = 0;
 
-        // Precipitation deficit contributes most to drought (70%)
-        if (precipAnomaly < -0.5) riskScore += 0.7; // Severe deficit
-        else if (precipAnomaly < -0.3) riskScore += 0.5; // Moderate deficit
-        else if (precipAnomaly < -0.1) riskScore += 0.3; // Mild deficit
-        else if (precipAnomaly < 0) riskScore += 0.15; // Slight deficit
+        // Precipitation deficit component (60% weight)
+        // More negative anomaly = more severe drought
+        if (precipAnomaly < -0.7) {
+          riskScore += 0.6; // Severe deficit (>70% below normal)
+        } else if (precipAnomaly < -0.5) {
+          riskScore += 0.48; // Major deficit (50-70% below normal)
+        } else if (precipAnomaly < -0.3) {
+          riskScore += 0.36; // Moderate deficit (30-50% below normal)
+        } else if (precipAnomaly < -0.15) {
+          riskScore += 0.24; // Mild deficit (15-30% below normal)
+        } else if (precipAnomaly < -0.05) {
+          riskScore += 0.12; // Slight deficit (5-15% below normal)
+        }
 
-        // High temperature increases drought risk (20%)
-        if (tempAnomaly > 3) riskScore += 0.2;
-        else if (tempAnomaly > 2) riskScore += 0.15;
-        else if (tempAnomaly > 1) riskScore += 0.1;
+        // Temperature anomaly component (25% weight)
+        // Higher temps increase evapotranspiration and water stress
+        if (tempAnomaly > 4) {
+          riskScore += 0.25; // Extreme heat
+        } else if (tempAnomaly > 3) {
+          riskScore += 0.20; // Very high temps
+        } else if (tempAnomaly > 2) {
+          riskScore += 0.15; // High temps
+        } else if (tempAnomaly > 1) {
+          riskScore += 0.10; // Moderately high
+        } else if (tempAnomaly > 0.5) {
+          riskScore += 0.05; // Slightly elevated
+        }
 
-        // Very low absolute precipitation (10%)
-        if (recentPrecip < 30) riskScore += 0.1; // Less than 30mm in 30 days
-        else if (recentPrecip < 50) riskScore += 0.05;
+        // Absolute precipitation threshold (15% weight)
+        // Very low rainfall regardless of historical average
+        // Rwanda typical monthly rainfall: 60-150mm depending on season
+        if (recentPrecip < 20) {
+          riskScore += 0.15; // Critically low (<20mm/month)
+        } else if (recentPrecip < 40) {
+          riskScore += 0.12; // Very low (<40mm/month)
+        } else if (recentPrecip < 60) {
+          riskScore += 0.09; // Low (<60mm/month)
+        } else if (recentPrecip < 80) {
+          riskScore += 0.06; // Below average
+        } else if (recentPrecip < 100) {
+          riskScore += 0.03; // Slightly below average
+        }
 
         // Cap at 1.0
         riskScore = Math.min(1, riskScore);

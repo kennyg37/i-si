@@ -1,6 +1,5 @@
 import { tool, zodSchema } from 'ai';
 import { z } from 'zod';
-import { chirpsAPI } from '../api/chirps';
 import { nasaPowerAPI } from '../api/nasa-power';
 import { srtmAPI } from '../api/srtm';
 import { floodRiskAPI } from '../api/flood-risk';
@@ -10,34 +9,46 @@ import { floodRiskAPI } from '../api/flood-risk';
  */
 
 export const getRainfallData = tool({
-  description: 'Get rainfall data for a specific location and date range using CHIRPS API',
+  description: 'Get rainfall data for a specific location and date range using NASA POWER API',
   inputSchema: zodSchema(z.object({
     latitude: z.number().min(-2.8).max(-1.0).describe('Latitude in Rwanda (-2.8 to -1.0)'),
     longitude: z.number().min(28.8).max(31.0).describe('Longitude in Rwanda (28.8 to 31.0)'),
-    startDate: z.string().describe('Start date in YYYY-MM-DD format'),
-    endDate: z.string().describe('End date in YYYY-MM-DD format'),
+    startDate: z.string().describe('Start date in YYYYMMDD format'),
+    endDate: z.string().describe('End date in YYYYMMDD format'),
   })),
   execute: async ({ latitude, longitude, startDate, endDate }) => {
-    const data = await chirpsAPI.getRainfallTimeSeries(latitude, longitude, startDate, endDate);
+    const data = await nasaPowerAPI.getRainfallData(latitude, longitude, startDate, endDate);
 
     if (!data) {
-      return { error: 'Failed to fetch rainfall data' };
+      return { error: 'Failed to fetch rainfall data from NASA POWER API' };
     }
 
-    const values = Object.values(data.data || {}).map((d: any) => d.precipitation);
+    const values = data.properties?.parameter?.PRECTOTCORR
+      ? Object.values(data.properties.parameter.PRECTOTCORR).filter(
+          (p): p is number => typeof p === 'number' && p >= 0
+        )
+      : [];
+
+    if (values.length === 0) {
+      return { error: 'No rainfall data available for this location and date range' };
+    }
+
     const total = values.reduce((sum, val) => sum + val, 0);
     const average = total / values.length;
     const recent7Days = values.slice(-7);
-    const recent7DaysAvg = recent7Days.reduce((sum, val) => sum + val, 0) / recent7Days.length;
+    const recent7DaysAvg = recent7Days.length > 0
+      ? recent7Days.reduce((sum, val) => sum + val, 0) / recent7Days.length
+      : 0;
 
     return {
       location: { latitude, longitude },
       period: { startDate, endDate },
-      totalRainfall: total.toFixed(1),
-      averageDaily: average.toFixed(2),
-      recent7DaysAverage: recent7DaysAvg.toFixed(2),
+      totalRainfall: total.toFixed(1) + ' mm',
+      averageDaily: average.toFixed(2) + ' mm/day',
+      recent7DaysAverage: recent7DaysAvg.toFixed(2) + ' mm/day',
       dataPoints: values.length,
       dailyValues: values.slice(-30), // Last 30 days
+      source: 'NASA POWER API',
     };
   },
 });
@@ -128,27 +139,142 @@ export const assessFloodRisk = tool({
 });
 
 export const getDroughtRisk = tool({
-  description: 'Assess drought risk based on rainfall deficit and historical patterns',
+  description: 'Assess drought risk based on rainfall deficit and temperature anomalies using NASA POWER data',
   inputSchema: zodSchema(z.object({
     latitude: z.number().min(-2.8).max(-1.0).describe('Latitude in Rwanda'),
     longitude: z.number().min(28.8).max(31.0).describe('Longitude in Rwanda'),
-    startDate: z.string().describe('Start date in YYYY-MM-DD format'),
-    endDate: z.string().describe('End date in YYYY-MM-DD format'),
+    startDate: z.string().describe('Start date in YYYYMMDD format'),
+    endDate: z.string().describe('End date in YYYYMMDD format'),
   })),
   execute: async ({ latitude, longitude, startDate, endDate }) => {
-    const risk = await chirpsAPI.getDroughtRisk(latitude, longitude, startDate, endDate);
+    try {
+      // Fetch rainfall data
+      const rainfallData = await nasaPowerAPI.getRainfallData(latitude, longitude, startDate, endDate);
 
-    if (!risk) {
-      return { error: 'Failed to assess drought risk' };
+      if (!rainfallData) {
+        return { error: 'Failed to fetch rainfall data' };
+      }
+
+      const precipValues = rainfallData.properties?.parameter?.PRECTOTCORR
+        ? Object.values(rainfallData.properties.parameter.PRECTOTCORR).filter(
+            (p): p is number => typeof p === 'number' && p >= 0
+          )
+        : [];
+
+      if (precipValues.length === 0) {
+        return { error: 'No rainfall data available' };
+      }
+
+      const averagePrecipitation = precipValues.reduce((sum, val) => sum + val, 0) / precipValues.length;
+      const recentPrecipitation = precipValues.slice(-30);
+      const recentAverage = recentPrecipitation.reduce((sum, val) => sum + val, 0) / recentPrecipitation.length;
+
+      const deficit = averagePrecipitation > 0
+        ? (averagePrecipitation - recentAverage) / averagePrecipitation
+        : 0;
+
+      const droughtRisk = Math.max(0, Math.min(1, deficit));
+
+      let riskLevel: string;
+      if (droughtRisk > 0.5) riskLevel = 'high';
+      else if (droughtRisk > 0.3) riskLevel = 'medium';
+      else riskLevel = 'low';
+
+      return {
+        location: { latitude, longitude },
+        riskLevel,
+        droughtScore: (droughtRisk * 100).toFixed(1) + '%',
+        averagePrecipitation: averagePrecipitation.toFixed(1) + ' mm/day',
+        recentAverage: recentAverage.toFixed(1) + ' mm/day',
+        deficit: (deficit * 100).toFixed(1) + '%',
+        source: 'NASA POWER API',
+      };
+    } catch (error) {
+      console.error('Drought risk calculation error:', error);
+      return { error: 'Failed to calculate drought risk' };
     }
+  },
+});
+
+/**
+ * Get map coordinates and view information
+ */
+export const getMapView = tool({
+  description: 'Get current map view coordinates and zoom level for spatial analysis',
+  inputSchema: zodSchema(z.object({
+    requestType: z.enum(['current', 'bounds']).describe('Type of map info to retrieve'),
+  })),
+  execute: async ({ requestType }) => {
+    // This tool provides a way for the AI to understand map context
+    // In a real implementation, this would access the map store
+    return {
+      message: 'To access current map view, the AI can request coordinates from the user or use provided coordinates',
+      suggestion: 'Ask the user to click a location on the map or provide specific coordinates for analysis',
+      rwandaBounds: {
+        north: -1.0,
+        south: -2.8,
+        east: 31.0,
+        west: 28.8,
+      },
+    };
+  },
+});
+
+/**
+ * Navigate map to specific location
+ */
+export const navigateMap = tool({
+  description: 'Request to navigate the map to a specific location with coordinates',
+  inputSchema: zodSchema(z.object({
+    latitude: z.number().min(-2.8).max(-1.0).describe('Target latitude in Rwanda'),
+    longitude: z.number().min(28.8).max(31.0).describe('Target longitude in Rwanda'),
+    zoom: z.number().min(7).max(18).optional().describe('Optional zoom level (7-18)'),
+  })),
+  execute: async ({ latitude, longitude, zoom }) => {
+    return {
+      action: 'navigate',
+      coordinates: { latitude, longitude },
+      zoom: zoom || 12,
+      message: `Map should navigate to coordinates: ${latitude.toFixed(4)}, ${longitude.toFixed(4)} at zoom level ${zoom || 12}`,
+      instructions: 'This tool signals the intent to navigate. The UI should implement the actual navigation.',
+    };
+  },
+});
+
+/**
+ * Analyze multiple locations for comparison
+ */
+export const compareLocations = tool({
+  description: 'Compare climate risk metrics across multiple locations in Rwanda',
+  inputSchema: zodSchema(z.object({
+    locations: z.array(z.object({
+      name: z.string(),
+      latitude: z.number().min(-2.8).max(-1.0),
+      longitude: z.number().min(28.8).max(31.0),
+    })).min(2).max(5).describe('Array of 2-5 locations to compare'),
+  })),
+  execute: async ({ locations }) => {
+    const results = await Promise.all(
+      locations.map(async (loc) => {
+        const [floodRisk, elevationData] = await Promise.all([
+          floodRiskAPI.calculateFloodRisk(loc.latitude, loc.longitude),
+          // Could add more parallel data fetches here
+        ]);
+
+        return {
+          name: loc.name,
+          coordinates: { latitude: loc.latitude, longitude: loc.longitude },
+          floodRisk: floodRisk ? {
+            level: floodRisk.riskLevel,
+            score: (floodRisk.riskScore * 100).toFixed(1) + '%',
+          } : null,
+        };
+      })
+    );
 
     return {
-      location: { latitude, longitude },
-      riskLevel: risk.riskLevel,
-      droughtScore: (risk.droughtRisk * 100).toFixed(1) + '%',
-      averagePrecipitation: risk.averagePrecipitation.toFixed(1) + 'mm/day',
-      recentAverage: risk.recentAverage.toFixed(1) + 'mm/day',
-      deficit: ((risk.averagePrecipitation - risk.recentAverage) / risk.averagePrecipitation * 100).toFixed(1) + '%',
+      comparison: results,
+      summary: `Analyzed ${results.length} locations for climate risk comparison`,
     };
   },
 });
@@ -162,4 +288,7 @@ export const climateTools = {
   getElevationData,
   assessFloodRisk,
   getDroughtRisk,
+  getMapView,
+  navigateMap,
+  compareLocations,
 };

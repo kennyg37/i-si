@@ -70,7 +70,6 @@ const mockExtremeWeatherEvents = [
     impacts: { agricultural: 0.8, infrastructure: 0.9, health: 0.6, economic: 0.7 },
     precipitationTotal: 150,
     peakIntensity: 25,
-    duration: 3,
     returnPeriod: 10,
     waterLevel: 2.5
   },
@@ -504,14 +503,6 @@ export function ExtremeWeatherEvents() {
                     <div>
                       <p className="text-xs text-muted-foreground">Precipitation Deficit</p>
                       <p className="font-medium">{event.precipitationDeficit} mm</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Soil Moisture Deficit</p>
-                      <p className="font-medium">{(event.soilMoistureDeficit * 100).toFixed(0)}%</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Vegetation Stress</p>
-                      <p className="font-medium">{(event.vegetationStress * 100).toFixed(0)}%</p>
                     </div>
                   </div>
                 )}

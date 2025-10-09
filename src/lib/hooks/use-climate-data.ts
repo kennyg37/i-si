@@ -1,5 +1,5 @@
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
-import { nasaPowerAPI, chirpsAPI, sentinelHubAPI, srtmAPI } from '../api';
+import { nasaPowerAPI, sentinelHubAPI, srtmAPI } from '../api';
 
 
 // NASA POWER API hooks
@@ -55,22 +55,7 @@ export const useTemperatureData = (
   });
 };
 
-// CHIRPS API hooks
-export const useCHIRPSRainfall = (
-  lat: number,
-  lon: number,
-  startDate: string,
-  endDate: string
-) => {
-  return useQuery({
-    queryKey: ['chirps-rainfall', lat, lon, startDate, endDate],
-    queryFn: () => chirpsAPI.getRainfallTimeSeries(lat, lon, startDate, endDate),
-    enabled: !!(lat && lon && startDate && endDate),
-    staleTime: 1000 * 60 * 60, // 1 hour
-    gcTime: 1000 * 60 * 60 * 4, // 4 hours
-  });
-};
-
+// Drought risk using NASA POWER API
 export const useDroughtRisk = (
   lat: number,
   lon: number,
@@ -81,13 +66,7 @@ export const useDroughtRisk = (
     queryKey: ['drought-risk', lat, lon, startDate, endDate],
     queryFn: async () => {
       try {
-        // Try CHIRPS API first
-        const chirpsResult = await chirpsAPI.getDroughtRisk(lat, lon, startDate, endDate);
-        if (chirpsResult) {
-          return chirpsResult;
-        }
-        
-        // Fallback to NASA POWER API calculation
+        // Use NASA POWER API for drought risk calculation
         const rainfallData = await nasaPowerAPI.getRainfallData(lat, lon, startDate.replace(/-/g, ''), endDate.replace(/-/g, ''));
         if (!rainfallData?.properties?.parameter?.PRECTOTCORR) {
           return null;
@@ -95,18 +74,18 @@ export const useDroughtRisk = (
 
         const precipitationValues = Object.values(rainfallData.properties.parameter.PRECTOTCORR)
           .filter((p): p is number => typeof p === 'number' && p >= 0);
-        
+
         if (precipitationValues.length === 0) {
           return null;
         }
 
         const totalPrecipitation = precipitationValues.reduce((sum, val) => sum + val, 0);
         const averagePrecipitation = totalPrecipitation / precipitationValues.length;
-        
+
         // Simple drought risk calculation based on precipitation deficit
         const expectedPrecipitation = 50; // mm per month baseline for Rwanda
         const droughtRisk = Math.max(0, (expectedPrecipitation - averagePrecipitation) / expectedPrecipitation);
-        
+
         return {
           droughtRisk: Math.min(1, droughtRisk),
           averagePrecipitation,

@@ -3,9 +3,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import { AlertTriangle, TrendingUp, TrendingDown, Minus, MapPin } from 'lucide-react';
 import { useClickedCoordinates, useSelectedLocation } from '@/lib/store/map-store';
 import { CoordinateDisplay } from '@/components/coordinate-display';
+import { useLocationAnalytics } from '@/hooks/use-location-analytics';
 import type { RiskLevel } from '@/types';
 
 // Mock data - in production this would come from your API
@@ -77,30 +79,116 @@ const getTrendIcon = (trend: string) => {
 export function RiskSummary() {
   const clickedCoordinates = useClickedCoordinates();
   const selectedLocation = useSelectedLocation();
-  const { overall, components, districts } = mockRiskData;
+
+  // Fetch real analytics data for clicked location
+  const { data: analytics, isLoading, error } = useLocationAnalytics(
+    clickedCoordinates?.lat,
+    clickedCoordinates?.lon,
+    !!clickedCoordinates
+  );
+
+  // Calculate overall risk from real data
+  const calculateOverallRisk = () => {
+    if (!analytics) return mockRiskData.overall;
+
+    const floodScore = analytics.floodRisk.score;
+    const droughtScore = analytics.droughtRisk.score;
+    const overallScore = (floodScore + droughtScore) / 2;
+
+    let level: RiskLevel = 'low';
+    if (overallScore >= 0.75) level = 'extreme';
+    else if (overallScore >= 0.5) level = 'high';
+    else if (overallScore >= 0.25) level = 'medium';
+
+    return {
+      level,
+      score: overallScore,
+      trend: floodScore > droughtScore ? 'increasing' : 'stable'
+    };
+  };
+
+  const calculateComponents = () => {
+    if (!analytics) return mockRiskData.components;
+
+    return {
+      rainfall: {
+        level: (analytics.rainfall.recent / 7 > 15 ? 'high' : analytics.rainfall.recent / 7 > 5 ? 'medium' : 'low') as RiskLevel,
+        score: Math.min(1, analytics.rainfall.recent / 150),
+        trend: 'stable',
+        description: `${analytics.rainfall.recent.toFixed(1)}mm in last 7 days`
+      },
+      temperature: {
+        level: (analytics.temperature.current > 28 ? 'high' : analytics.temperature.current > 22 ? 'medium' : 'low') as RiskLevel,
+        score: Math.min(1, (analytics.temperature.current - 15) / 20),
+        trend: 'stable',
+        description: `Current: ${analytics.temperature.current.toFixed(1)}°C (Range: ${analytics.temperature.min.toFixed(1)}-${analytics.temperature.max.toFixed(1)}°C)`
+      },
+      flood: {
+        level: analytics.floodRisk.level as RiskLevel,
+        score: analytics.floodRisk.score,
+        trend: analytics.rainfall.recent > analytics.rainfall.monthly / 4 ? 'increasing' : 'stable',
+        description: analytics.floodRisk.details ?
+          `Elevation: ${Math.round(analytics.floodRisk.details.factors.elevation.value)}m, Slope: ${analytics.floodRisk.details.factors.slope.value.toFixed(1)}°` :
+          'Based on rainfall, elevation, and slope'
+      },
+      drought: {
+        level: analytics.droughtRisk.level as RiskLevel,
+        score: analytics.droughtRisk.score,
+        trend: analytics.rainfall.recent < analytics.rainfall.monthly / 4 ? 'increasing' : 'decreasing',
+        description: analytics.droughtRisk.details ?
+          `Precipitation deficit: ${(analytics.droughtRisk.details.factors.precipitation.anomaly * 100).toFixed(0)}%` :
+          'Based on precipitation patterns'
+      }
+    };
+  };
+
+  const overall = calculateOverallRisk();
+  const components = calculateComponents();
+  const { districts } = mockRiskData; // Keep districts as mock for now
 
   return (
     <div className="space-y-4">
       {/* Coordinate Display */}
       <CoordinateDisplay />
 
+      {/* Loading indicator */}
+      {isLoading && clickedCoordinates && (
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-4 w-4 rounded-full" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Location-based data notice */}
-      {clickedCoordinates && (
+      {clickedCoordinates && !isLoading && (
         <Card className="border-primary">
           <CardContent className="pt-4">
             <div className="flex items-start gap-2 text-sm">
               <MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
               <div>
-                <p className="font-medium text-primary">Location Data</p>
+                <p className="font-medium text-primary">
+                  {analytics ? 'Live Risk Analysis' : 'Location Selected'}
+                </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Risk data below can be filtered for coordinates:{' '}
+                  Coordinates:{' '}
                   <span className="font-mono">
                     {clickedCoordinates.lat.toFixed(4)}, {clickedCoordinates.lon.toFixed(4)}
                   </span>
                 </p>
-                <p className="text-xs text-muted-foreground mt-1 italic">
-                  (Currently showing mock data - integrate with actual API using these coordinates)
-                </p>
+                {analytics && (
+                  <p className="text-xs text-green-600 mt-1">
+                    ✓ Using real-time climate data
+                  </p>
+                )}
+                {error && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    ⚠ Some data unavailable - showing available metrics
+                  </p>
+                )}
               </div>
             </div>
           </CardContent>

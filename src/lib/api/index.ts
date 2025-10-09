@@ -1,7 +1,6 @@
 // Centralized API exports
 export { nasaPowerAPI, NASAPowerAPI } from './nasa-power';
 export { sentinelHubAPI, SentinelHubAPI } from './sentinel-hub';
-export { chirpsAPI, CHIRPSAPI } from './chirps';
 export { srtmAPI, SRTMAPI } from './srtm';
 
 // Safe fetch utility for fallback data

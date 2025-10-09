@@ -17,9 +17,6 @@ export async function POST(req: Request) {
     // Convert UI messages to model messages
     const modelMessages = convertToModelMessages(messages);
 
-    console.log('Converted model messages:', JSON.stringify(modelMessages, null, 2));
-    console.log('Tools:', Object.keys(climateTools));
-
     const result = streamText({
       model: ai.model,
       system: systemPrompt,

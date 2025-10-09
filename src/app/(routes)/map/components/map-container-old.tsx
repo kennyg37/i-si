@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import Map, { MapRef, Source, Layer } from 'react-map-gl/mapbox';
+import Map, { MapRef, Source, Layer, Marker, Popup } from 'react-map-gl/mapbox';
 import type { MapMouseEvent } from 'react-map-gl/mapbox';
 import { RWANDA_CENTER, RWANDA_BOUNDS, getRwandaZoomLevel, bboxToArray } from '@/lib/utils/geo-utils';
 import { MapSkeleton } from '@/components/loading-skeleton';
@@ -12,9 +12,9 @@ import { MapPin, X, Locate, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import toast from 'react-hot-toast';
 import { sentinelHubAPI } from '@/lib/api/sentinel-hub';
+import { useFloodRiskGrid, floodRiskToGeoJSON } from '@/hooks/use-flood-risk';
 import { useGeolocation } from '@/hooks/use-geolocation';
 import { LocationAnalyticsPanel } from '@/components/location-analytics-panel';
-import { ClimateRiskPopup } from '@/components/ClimateRiskPopup';
 
 interface MapContainerProps {
   selectedLayers: string[];
@@ -29,16 +29,41 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
   const [mapboxToken] = useState(process.env.NEXT_PUBLIC_MAPBOX_TOKEN);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [analyticsCoordinates, setAnalyticsCoordinates] = useState<Coordinates | null>(null);
-  const [isMapReady, setIsMapReady] = useState(false);
 
   // Geolocation hook
   const { coordinates: geoCoordinates, isLoading: isGeoLoading, error: geoError, getLocation } = useGeolocation();
+
+  // Calculate minZoom based on active layers
+  const minZoom = useMemo(() => {
+    if (selectedLayers.includes('flood-sar')) return 7;
+    if (selectedLayers.includes('ndvi')) return 8;
+    return 6; // Default minimum zoom
+  }, [selectedLayers]);
 
   // Track current zoom level for layer visibility management
   const [currentZoom, setCurrentZoom] = useState<number>(getRwandaZoomLevel());
 
   // NDVI max zoom level (200m/pixel is approximately zoom level 12-13)
   const NDVI_MAX_ZOOM = 13;
+
+  // Fetch flood risk data for Rwanda
+  const rwandaBbox = useMemo(() => bboxToArray(RWANDA_BOUNDS), []);
+  const { data: floodRiskData, isLoading: isLoadingFloodRisk } = useFloodRiskGrid(
+    rwandaBbox,
+    8, // 8x8 grid = 64 points across Rwanda
+    selectedLayers.includes('flood-risk')
+  );
+
+  // Convert flood risk data to GeoJSON
+  const floodRiskGeoJSON = useMemo(() => {
+    if (!floodRiskData || floodRiskData.length === 0) {
+      return {
+        type: 'FeatureCollection' as const,
+        features: [],
+      };
+    }
+    return floodRiskToGeoJSON(floodRiskData);
+  }, [floodRiskData]);
 
   // Zustand store
   const {
@@ -56,9 +81,8 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
   // Handle map load
   const handleMapLoad = useCallback(() => {
     setMapLoaded(true);
-    setIsMapReady(true);
     console.log('Map loaded successfully');
-
+    
     // Force map to resize and update its container
     if (mapRef.current) {
       const map = mapRef.current.getMap();
@@ -92,9 +116,9 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
     if (mapRef.current) {
       mapRef.current.flyTo({
         center: [lngLat.lng, lngLat.lat],
-        zoom: 12,
-        duration: 1500,
-        essential: true,
+        zoom: 12, // Zoom level (adjust as needed: 10-15 for different detail levels)
+        duration: 1500, // Animation duration in milliseconds
+        essential: true, // This animation is considered essential with respect to prefers-reduced-motion
       });
     }
 
@@ -116,11 +140,13 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
 
   // Handle map move to update viewport state
   const handleMove = useCallback(() => {
-    if (!mapRef.current || !isMapReady) return;
+    if (!mapRef.current) return;
 
     const map = mapRef.current.getMap();
     const center = map.getCenter();
     const zoom = map.getZoom();
+    const bearing = map.getBearing();
+    const pitch = map.getPitch();
 
     // Update current zoom level
     setCurrentZoom(zoom);
@@ -130,10 +156,10 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
       latitude: center.lat,
       longitude: center.lng,
       zoom,
-      bearing: map.getBearing(),
-      pitch: map.getPitch(),
+      bearing,
+      pitch,
     });
-  }, [isMapReady, setViewport]);
+  }, []); // Empty dependencies to prevent recreation
 
   // Copy coordinates to clipboard
   const copyToClipboard = useCallback((coords: Coordinates) => {
@@ -241,18 +267,6 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
     return () => window.removeEventListener('resize', handleResize);
   }, [isMapLoaded]);
 
-  // Calculate layer visibility
-  const isLayerVisible = useCallback((layerId: string) => {
-    const isSelected = selectedLayers.includes(layerId);
-    const isWithinZoomLimit = currentZoom <= NDVI_MAX_ZOOM;
-
-    if (layerId === 'ndvi') {
-      return isSelected && isWithinZoomLimit;
-    }
-
-    return isSelected;
-  }, [selectedLayers, currentZoom, NDVI_MAX_ZOOM]);
-
   if (!mapboxToken) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-muted">
@@ -314,7 +328,7 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
             <div className="flex items-center gap-2 text-sm text-amber-950">
               <AlertTriangle className="h-4 w-4 flex-shrink-0" />
               <span>
-                NDVI layer hidden - zoom out to see data (max zoom level: 14)
+                NDVI layer hidden - zoom out to see vegetation data (resolution limit: 200m/pixel)
               </span>
             </div>
           </div>
@@ -329,15 +343,6 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
               setShowAnalytics(false);
               setAnalyticsCoordinates(null);
             }}
-          />
-        )}
-
-        {/* Climate Risk Popup */}
-        {showPopup && popupCoordinates && (
-          <ClimateRiskPopup
-            coordinates={popupCoordinates}
-            onClose={handleClosePopup}
-            timeRange={timeRange as any}
           />
         )}
 
@@ -373,27 +378,49 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
             bearing: 0,
             pitch: 0,
           }}
-          minZoom={6}
+          minZoom={minZoom}
           maxZoom={18}
           style={{ width: '100%', height: '100%' }}
           mapStyle={`mapbox://styles/mapbox/${mapStyle}`}
           onLoad={handleMapLoad}
           onClick={onMapClick}
+          onMove={handleMove}
           onMoveEnd={handleMove}
+          interactiveLayerIds={['rainfall-layer', 'ndvi-layer', 'ndvi-placeholder-layer', 'moisture-stress-layer', 'flood-risk-layer', 'drought-risk-layer', 'flood-sar-layer']}
           cursor="crosshair"
           attributionControl={false}
           preserveDrawingBuffer={true}
           reuseMaps={true}
         >
-          {/* Always render sources, control visibility via paint properties */}
-
-          {/* NDVI Layer - Sentinel Hub */}
-          {sentinelHubAPI.isConfigured() && sentinelHubAPI.getXYZTileURL() && (
+          {/* Rainfall Layer */}
+          {selectedLayers.includes('rainfall') && (
             <Source
-              key="ndvi-source"
+              id="rainfall"
+              type="raster"
+              tiles={[
+                // Placeholder - replace with actual rainfall tiles
+                `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`,
+              ]}
+              tileSize={256}
+            >
+              <Layer
+                id="rainfall-layer"
+                type="raster"
+                paint={{
+                  'raster-opacity': 0.5,
+                }}
+              />
+            </Source>
+          )}
+
+          {/* NDVI Layer - Sentinel Hub (disabled when zoomed in past 200m/pixel resolution) */}
+          {selectedLayers.includes('ndvi') && currentZoom <= NDVI_MAX_ZOOM && sentinelHubAPI.isConfigured() && sentinelHubAPI.getXYZTileURL() && (
+            <Source
               id="ndvi"
               type="raster"
-              tiles={[sentinelHubAPI.getXYZTileURL()]}
+              tiles={[
+                sentinelHubAPI.getXYZTileURL(),
+              ]}
               tileSize={256}
               scheme="xyz"
             >
@@ -401,35 +428,222 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
                 id="ndvi-layer"
                 type="raster"
                 paint={{
-                  'raster-opacity': isLayerVisible('ndvi') ? 0.7 : 0,
+                  'raster-opacity': 0.7,
                 }}
               />
             </Source>
           )}
 
-          {/* NDVI Placeholder when Sentinel Hub not configured */}
-          {(!sentinelHubAPI.isConfigured() || !sentinelHubAPI.getXYZTileURL()) && (
+          {/* NDVI Layer fallback - placeholder when Sentinel Hub not configured (disabled when zoomed in past 200m/pixel) */}
+          {selectedLayers.includes('ndvi') && currentZoom <= NDVI_MAX_ZOOM && (!sentinelHubAPI.isConfigured() || !sentinelHubAPI.getXYZTileURL()) && (
             <Source
-              key="ndvi-placeholder-source"
               id="ndvi-placeholder"
               type="raster"
-              tiles={[`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`]}
+              tiles={[
+                // Temporary: Using Mapbox satellite as placeholder for NDVI
+                `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`,
+              ]}
               tileSize={256}
             >
               <Layer
                 id="ndvi-placeholder-layer"
                 type="raster"
                 paint={{
-                  'raster-opacity': isLayerVisible('ndvi') ? 0.6 : 0,
-                  'raster-saturation': 0.3,
+                  'raster-opacity': 0.6,
+                  'raster-saturation': 0.3, // Slightly desaturated to indicate it's vegetation-focused
                 }}
               />
             </Source>
           )}
 
+          {/* Sentinel-2 Moisture Stress Index Layer (for drought/disaster monitoring) */}
+          {selectedLayers.includes('moisture-stress') && currentZoom <= NDVI_MAX_ZOOM && sentinelHubAPI.isMoistureConfigured() && sentinelHubAPI.getMoistureTileURL() && (
+            <Source
+              id="moisture-stress"
+              type="raster"
+              tiles={[
+                sentinelHubAPI.getMoistureTileURL(),
+              ]}
+              tileSize={256}
+              scheme="xyz"
+            >
+              <Layer
+                id="moisture-stress-layer"
+                type="raster"
+                paint={{
+                  'raster-opacity': 0.7,
+                }}
+              />
+            </Source>
+          )}
+
+          {/* Sentinel-1 SAR Flood Detection Layer */}
+          {selectedLayers.includes('flood-sar') && sentinelHubAPI.isFloodConfigured() && sentinelHubAPI.getFloodTileURL() && (
+            <Source
+              id="flood-sar"
+              type="raster"
+              tiles={[
+                sentinelHubAPI.getFloodTileURL(),
+              ]}
+              tileSize={512}
+            >
+              <Layer
+                id="flood-sar-layer"
+                type="raster"
+                paint={{
+                  'raster-opacity': 0.7,
+                }}
+              />
+            </Source>
+          )}
+
+          {/* SAR fallback when not configured */}
+          {selectedLayers.includes('flood-sar') && (!sentinelHubAPI.isFloodConfigured() || !sentinelHubAPI.getFloodTileURL()) && (
+            <Source
+              id="flood-sar-placeholder"
+              type="geojson"
+              data={{
+                type: 'FeatureCollection',
+                features: []
+              }}
+            >
+              <Layer
+                id="flood-sar-layer"
+                type="fill"
+                paint={{
+                  'fill-color': '#ff0000',
+                  'fill-opacity': 0,
+                }}
+              />
+            </Source>
+          )}
+
+          {/* CHIRPS+SRTM Flood Risk Model Layer - Dynamic Data */}
+          {selectedLayers.includes('flood-risk') && (
+            <Source
+              id="flood-risk"
+              type="geojson"
+              data={floodRiskGeoJSON}
+            >
+              <Layer
+                id="flood-risk-layer"
+                type="fill"
+                paint={{
+                  'fill-color': [
+                    'match',
+                    ['get', 'risk'],
+                    'extreme', '#8B0000',    // Dark red
+                    'high', '#FF0000',       // Red
+                    'medium', '#FFA500',     // Orange
+                    'low', '#FFFF00',        // Yellow
+                    '#90EE90'                // Light green (default)
+                  ],
+                  'fill-opacity': [
+                    'interpolate',
+                    ['linear'],
+                    ['get', 'score'],
+                    0, 0.2,      // Low risk - more transparent
+                    0.5, 0.4,    // Medium risk
+                    1, 0.6       // High risk - more opaque
+                  ],
+                }}
+              />
+              <Layer
+                id="flood-risk-outline"
+                type="line"
+                paint={{
+                  'line-color': [
+                    'match',
+                    ['get', 'risk'],
+                    'extreme', '#8B0000',
+                    'high', '#FF0000',
+                    'medium', '#FFA500',
+                    'low', '#FFD700',
+                    '#98FB98'
+                  ],
+                  'line-width': 2,
+                  'line-opacity': 0.8,
+                }}
+              />
+              {/* Labels showing risk level */}
+              <Layer
+                id="flood-risk-labels"
+                type="symbol"
+                layout={{
+                  'text-field': ['get', 'name'],
+                  'text-size': 10,
+                  'text-anchor': 'center',
+                }}
+                paint={{
+                  'text-color': '#000000',
+                  'text-halo-color': '#FFFFFF',
+                  'text-halo-width': 1,
+                }}
+              />
+            </Source>
+          )}
+
+          {/* Loading indicator for flood risk */}
+          {selectedLayers.includes('flood-risk') && isLoadingFloodRisk && (
+            <div className="absolute top-20 left-4 z-10 bg-background/95 backdrop-blur-sm border rounded-lg p-3 shadow-lg">
+              <div className="flex items-center gap-2">
+                <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                <span className="text-sm">Loading flood risk data...</span>
+              </div>
+            </div>
+          )}
+
+          {/* Drought Risk Layer */}
+          {selectedLayers.includes('drought') && (
+            <Source
+              id="drought-risk"
+              type="geojson"
+              data={{
+                type: 'FeatureCollection',
+                features: [
+                  {
+                    type: 'Feature',
+                    properties: { risk: 'medium', name: 'Moderate Drought Risk' },
+                    geometry: {
+                      type: 'Polygon',
+                      coordinates: [
+                        [
+                          [28.8, -2.5],
+                          [29.5, -2.5],
+                          [29.5, -2.8],
+                          [28.8, -2.8],
+                          [28.8, -2.5],
+                        ],
+                      ],
+                    },
+                  },
+                ],
+              }}
+            >
+              <Layer
+                id="drought-risk-layer"
+                type="fill"
+                paint={{
+                  'fill-color': ['case', ['==', ['get', 'risk'], 'high'], '#8b0000', ['==', ['get', 'risk'], 'medium'], '#ffa500', '#ffff00'],
+                  'fill-opacity': 0.3,
+                }}
+              />
+              <Layer
+                id="drought-risk-outline"
+                type="line"
+                paint={{
+                  'line-color': '#8b0000',
+                  'line-width': 2,
+                  'line-opacity': 0.6,
+                }}
+              />
+            </Source>
+          )}
+
+          {/* Markers and popups removed for now - coordinates shown in bottom-left panel */}
+
           {/* Bold country borders layer */}
           <Source
-            key="country-boundaries-source"
             id="country-boundaries"
             type="vector"
             url="mapbox://mapbox.country-boundaries-v1"
@@ -447,7 +661,7 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
             />
           </Source>
 
-          {/* Admin boundaries */}
+          {/* Admin boundaries (districts/provinces) */}
           <Layer
             id="admin-boundaries"
             type="line"

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CloudRain, Leaf, Sun, Waves, AlertTriangle, Satellite, Map as MapIcon } from 'lucide-react';
+import { Satellite, Map as MapIcon } from 'lucide-react';
 
 interface LayerControlsProps {
   selectedLayers: string[];
@@ -19,35 +19,7 @@ const layers = [
   {
     id: 'ndvi',
     name: 'Vegetation Health (NDVI)',
-    icon: Leaf,
-    description: 'Sentinel-2 vegetation stress indicators',
-    badge: 'Active'
-  },
-  {
-    id: 'flood-sar',
-    name: 'Flood Detection (SAR)',
-    icon: Waves,
-    description: 'Sentinel-1 SAR real-time flood mapping',
-    badge: 'New'
-  },
-  {
-    id: 'flood-risk',
-    name: 'Flood Risk Model',
-    icon: AlertTriangle,
-    description: 'CHIRPS rainfall + SRTM elevation analysis',
-    badge: 'New'
-  },
-  {
-    id: 'rainfall',
-    name: 'Rainfall Anomaly',
-    icon: CloudRain,
-    description: 'Precipitation patterns and anomalies'
-  },
-  {
-    id: 'drought',
-    name: 'Drought Risk',
-    icon: Sun,
-    description: 'Drought risk and water stress indicators'
+    description: 'Satellite-based vegetation health monitoring'
   }
 ];
 
@@ -116,9 +88,8 @@ export function LayerControls({
         </CardHeader>
         <CardContent className="space-y-3">
           {layers.map((layer) => {
-            const Icon = layer.icon;
             const isSelected = selectedLayers.includes(layer.id);
-            
+
             return (
               <div key={layer.id} className="flex items-start space-x-3">
                 <Checkbox
@@ -129,19 +100,13 @@ export function LayerControls({
                 <div className="flex-1 min-w-0">
                   <label
                     htmlFor={layer.id}
-                    className="flex items-center space-x-2 cursor-pointer"
+                    className="cursor-pointer block"
                   >
-                    <Icon className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium">{layer.name}</span>
-                    {layer.badge && (
-                      <Badge variant={layer.badge === 'New' ? 'default' : 'secondary'} className="text-xs">
-                        {layer.badge}
-                      </Badge>
-                    )}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {layer.description}
+                    </p>
                   </label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {layer.description}
-                  </p>
                 </div>
               </div>
             );
