@@ -98,38 +98,38 @@ export class SentinelHubAPI {
       }
 
       const requestBody = {
-        input: {
-          bounds: {
+            input: {
+              bounds: {
             bbox: bbox,
-            properties: {
-              crs: 'http://www.opengis.net/def/crs/EPSG/0/4326'
-            }
-          },
-          data: [
-            {
+                properties: {
+                  crs: 'http://www.opengis.net/def/crs/EPSG/0/4326'
+                }
+              },
+              data: [
+                {
               type: dataset,
-              dataFilter: {
-                timeRange: {
+                  dataFilter: {
+                    timeRange: {
                   from: timeRange.split('/')[0],
                   to: timeRange.split('/')[1]
+                    }
+                  }
                 }
-              }
-            }
-          ]
-        },
-        output: {
+              ]
+            },
+            output: {
           width: width,
           height: height,
-          responses: [
-            {
-              identifier: 'default',
-              format: {
-                type: 'image/png'
-              }
-            }
-          ]
-        },
-        evalscript: evalscript
+              responses: [
+                {
+                  identifier: 'default',
+                  format: {
+                    type: 'image/png'
+                  }
+                }
+              ]
+            },
+            evalscript: evalscript
       };
 
       // Use proxy to avoid CORS issues
@@ -138,7 +138,7 @@ export class SentinelHubAPI {
         token,
         requestBody
       }, {
-        timeout: 60000
+          timeout: 60000
       });
 
       return response.data;

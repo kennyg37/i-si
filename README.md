@@ -2,7 +2,10 @@
 
 A comprehensive Next.js application for climate risk assessment and visualization, specifically designed for Rwanda. This platform combines multiple data sources to provide real-time flood risk, drought risk, and flood prediction analysis with interactive map visualization.
 
-## 🌟 Features
+## video demo
+([Link](https://drive.google.com/drive/folders/1s9kWNpgV6TT5-AhVbj-o02ZuN0vgTGyM?usp=sharing))
+
+## Features
 
 ### Core Functionality
 
@@ -19,8 +22,9 @@ A comprehensive Next.js application for climate risk assessment and visualizatio
 - **OpenTopography**: Elevation, slope, terrain analysis
 - **Mapbox**: Map visualization and rendering
 - **GFMS**: Historical flood events (optional)
+- **NISR Geospatial data portal**: Geojson data for local contexts
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -64,7 +68,7 @@ yarn dev
 6. **Open your browser**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
-## 🔧 API Setup
+## API Setup
 
 ### Required Environment Variables
 
@@ -131,7 +135,7 @@ NEXT_PUBLIC_APP_DESCRIPTION=Climate Risk Prediction and Visualization Platform f
 - Rate limits: 1000 requests per day
 - Provides global elevation data (SRTM, ASTER, etc.)
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 src/
@@ -160,7 +164,7 @@ src/
 └── types/                        # TypeScript type definitions
 ```
 
-## 🧮 Risk Calculation Algorithms
+## Risk Calculation Algorithms
 
 ### Flood Risk Index
 
@@ -189,7 +193,7 @@ Time-based flood risk forecasting:
 - **Terrain Factors (20%)**: Elevation, slope, drainage characteristics
 - **Vegetation Cover (10%)**: NDVI-based runoff potential
 
-## 🗺️ Map Layers
+## Map Layers
 
 ### Available Layers
 
@@ -206,7 +210,7 @@ Time-based flood risk forecasting:
 - Time range selection (7d, 30d, 90d, 1y, 5y)
 - Map style switching (Street, Satellite, Hybrid)
 
-## 📊 Data Flow
+## Data Flow
 
 ```mermaid
 graph TD
@@ -226,7 +230,7 @@ graph TD
     I --> L[Insights Dashboard]
 ```
 
-## 🛠️ Technologies Used
+## Technologies Used
 
 ### Core Framework
 
@@ -252,7 +256,7 @@ graph TD
 - **Lucide React**: Icon library
 - **React Hot Toast**: Toast notifications
 
-## 📚 API Documentation
+## API Documentation
 
 ### NASA POWER API
 
@@ -278,7 +282,7 @@ graph TD
 - **Rate Limit**: 1000 requests/day
 - **Output Formats**: GeoTIFF, AAIGrid, HFA
 
-## 🚨 Error Handling
+## Error Handling
 
 The application includes comprehensive error handling:
 
@@ -287,7 +291,7 @@ The application includes comprehensive error handling:
 - **Data Validation**: Type checking and data quality assessment
 - **User Feedback**: Loading states and error messages
 
-## 🔍 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -320,7 +324,7 @@ The application includes comprehensive error handling:
 - **Image Optimization**: Next.js automatic image optimization
 - **Bundle Analysis**: Use `npm run analyze` to check bundle size
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -328,11 +332,11 @@ The application includes comprehensive error handling:
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **NASA POWER**: Climate data provided by NASA Langley Research Center
 - **Sentinel Hub**: Satellite imagery processing platform
@@ -340,14 +344,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Mapbox**: Map visualization platform
 - **Rwanda**: Focus region for climate risk assessment
 
-## 📞 Support
+## Support
 
 For support and questions:
 
 - Create an issue in the GitHub repository
 - Check the troubleshooting section above
 - Review API documentation for specific services
-
----
-
-**Built with ❤️ for climate resilience and data-driven decision making**

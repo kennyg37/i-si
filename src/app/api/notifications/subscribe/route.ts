@@ -3,7 +3,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createSubscription } from '@/lib/db/subscriptions-db';
+import { createSubscription } from '@/lib/db/google-sheets-db';
 import { sendVerificationEmail } from '@/lib/email/mailer';
 import type { NotificationPreferences } from '@/lib/types/notifications';
 

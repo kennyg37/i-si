@@ -3,7 +3,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { unsubscribeByToken } from '@/lib/db/subscriptions-db';
+import { unsubscribeByToken } from '@/lib/db/google-sheets-db';
 
 export async function GET(request: NextRequest) {
   try {

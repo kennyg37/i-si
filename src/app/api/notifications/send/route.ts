@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getSubscriptionsNeedingNotifications, updateLastNotified } from '@/lib/db/subscriptions-db';
+import { getSubscriptionsNeedingNotifications, updateLastNotified } from '@/lib/db/google-sheets-db';
 import { fetchExtremeWeatherEvents } from '@/lib/api/extreme-weather';
 import { sendWeatherAlertEmail } from '@/lib/email/mailer';
 import { generateWeatherAlertEmail, generateWeatherDigestEmail } from '@/lib/email/templates';

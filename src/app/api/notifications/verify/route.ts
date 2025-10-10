@@ -3,7 +3,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySubscription, getSubscription } from '@/lib/db/subscriptions-db';
+import { verifySubscription, getSubscription } from '@/lib/db/google-sheets-db';
 import { sendWelcomeEmail } from '@/lib/email/mailer';
 
 export async function GET(request: NextRequest) {

@@ -67,41 +67,26 @@ export interface LayerInfo {
  * Browse available layers at: https://worldview.earthdata.nasa.gov/
  */
 export const GIBS_LAYERS = {
-  // 🌊 Flood Detection Layers
-  flood_viirs_1day: 'VIIRS_Combined_Flood_1-Day',
-  flood_viirs_2day: 'VIIRS_Combined_Flood_2-Day',
-  flood_viirs_3day: 'VIIRS_Combined_Flood_3-Day',
-  flood_modis_1day: 'MODIS_Combined_Flood_1-Day',
-  flood_modis_2day: 'MODIS_Combined_Flood_2-Day',
-  flood_modis_3day: 'MODIS_Combined_Flood_3-Day',
-
-  // 🌱 Soil Moisture Layers
-  // SMAP provides surface and root zone soil moisture (daily and 3-hourly)
-  soil_moisture: 'SMAP_L3_Active_Soil_Moisture', // Valid GIBS layer
-  soil_moisture_anomaly: 'SMAP_L4_Analyzed_Surface_Soil_Moisture', // Valid anomaly layer
-
-  // 🌧️ Rainfall and Precipitation
-  rainfall_anomaly: 'GLDAS_Surface_Total_Precipitation_Rate_Monthly', // Monthly anomaly-like use
-  precipitation: 'MERRA2_Precipitation_Bias_Corrected_Monthly', // Daily precipitation rate
-
-  // 🌡️ Land Surface Temperature
-  land_temp_modis: 'MODIS_Terra_L3_Land_Surface_Temp_8Day_Day_TES',
-  land_temp_viirs: 'VIIRS_SNPP_Land_Surface_Temp_Day',
-
-  // 🌿 Drought and Vegetation
-  ndvi_modis: 'MODIS_Terra_L3_NDVI_Monthly',
-  evi_modis: 'MODIS_Terra_L3_EVI_Monthly',
-
-  // 💧 Water and Hydrology
-  water_mask_modis: 'MODIS_Terra_L3_Land_Water_Mask',
-  snow_cover: 'MODIS_Terra_Snow_Cover_Daily_Tile', // daily, most common one
-
+  flood_viirs_1day: 'VIIRS_NOAA20_Flood_WaterDetection_1Day',
+  flood_viirs_2day: 'VIIRS_NOAA20_Flood_WaterDetection_2Day',
+  flood_viirs_3day: 'VIIRS_NOAA20_Flood_WaterDetection_3Day',
+  flood_modis_1day: 'MODIS_Aqua_L3_Water_Mask_1Day',
+  flood_modis_2day: 'MODIS_Aqua_L3_Water_Mask_2Day',
+  flood_modis_3day: 'MODIS_Aqua_L3_Water_Mask_3Day',
+  soil_moisture: 'SMAP_L4_Analyzed_Surface_Soil_Moisture',
+  soil_moisture_anomaly: 'SMAP_L4_Analyzed_Root_Zone_Soil_Moisture',
+  rainfall_anomaly: 'GLDAS_NOAH025_3H_v2_1_TotalPrecipRate',
+  precipitation: 'GPM_3IMERGHH_06_precipitationCal',
+  land_temp_modis: 'MODIS_Terra_Land_Surface_Temp_Day',
+  land_temp_viirs: 'VIIRS_NOAA20_Land_Surface_Temp_Day',
+  ndvi_modis: 'MODIS_Terra_NDVI_8Day',
+  evi_modis: 'MODIS_Terra_EVI_8Day',
+  water_mask_modis: 'MODIS_Water_Mask',
+  snow_cover: 'MODIS_Terra_Snow_Cover',
   fire_modis: 'VIIRS_SNPP_Thermal_Anomalies_375m_All',
   fire_viirs: 'VIIRS_NOAA20_Thermal_Anomalies_375m_All',
-
-  // 🌫️ Aerosols and Air Quality
-  aerosol_modis: 'MODIS_Terra_Aerosol', // Common MODIS AOD layer
-  dust_modis: 'MODIS_Combined_MAIAC_L2G_AerosolOpticalDepth' // Most used dust proxy layer
+  aerosol_modis: 'MODIS_Combined_L3_Aerosol_Optical_Depth',
+  dust_modis: 'MODIS_Combined_MAIAC_L2G_AerosolOpticalDepth'
 } as const;
 
 
@@ -126,16 +111,40 @@ export class NasaGibsClient {
    */
   getTileURL(layerKey: GibsLayerKey): string {
     const layerId = GIBS_LAYERS[layerKey];
-
-    // Use a recent date (7 days ago to account for processing delays and composite layers)
-    // Composite layers like 8-day NDVI need a date that falls within a composite period
     const date = this.getDateDaysAgo(7);
 
-    // Use Web Mercator (EPSG:3857) with GoogleMapsCompatible_Level9
-    const tileMatrixSet = 'GoogleMapsCompatible_Level9';
+    const tileMatrixSet = this.getTileMatrixSet(layerKey);
 
-    // WMTS RESTful format
     return `${this.baseURL}/${layerId}/default/${date}/${tileMatrixSet}/{z}/{y}/{x}.png`;
+  }
+
+  private getTileMatrixSet(layerKey: GibsLayerKey): string {
+    const layerMatrixMap: Partial<Record<GibsLayerKey, string>> = {
+      flood_viirs_1day: 'GoogleMapsCompatible_Level9',
+      flood_viirs_2day: 'GoogleMapsCompatible_Level9',
+      flood_viirs_3day: 'GoogleMapsCompatible_Level9',
+      flood_modis_1day: 'GoogleMapsCompatible_Level9',
+      flood_modis_2day: 'GoogleMapsCompatible_Level9',
+      flood_modis_3day: 'GoogleMapsCompatible_Level9',
+      soil_moisture: '2km',
+      soil_moisture_anomaly: '2km',
+      rainfall_anomaly: '250m',
+      precipitation: 'GoogleMapsCompatible_Level9',
+      land_temp_modis: 'GoogleMapsCompatible_Level9',
+      land_temp_viirs: 'GoogleMapsCompatible_Level9',
+      ndvi_modis: 'GoogleMapsCompatible_Level9',
+      evi_modis: 'GoogleMapsCompatible_Level9',
+      water_mask_modis: 'GoogleMapsCompatible_Level9',
+      snow_cover: 'GoogleMapsCompatible_Level9',
+      fire_modis: 'GoogleMapsCompatible_Level9',
+      fire_viirs: 'GoogleMapsCompatible_Level9',
+      aerosol_modis: 'GoogleMapsCompatible_Level9',
+      dust_modis: 'GoogleMapsCompatible_Level9'
+    };
+
+    console.log(`[GIBS] Using tile matrix set for ${layerKey}:`, layerMatrixMap[layerKey]);
+
+    return layerMatrixMap[layerKey] || 'GoogleMapsCompatible_Level9';
   }
 
   /**

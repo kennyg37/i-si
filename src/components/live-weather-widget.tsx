@@ -18,11 +18,12 @@ export function LiveWeatherWidget() {
 
   const fetchWeather = async () => {
     try {
-      const today = new Date();
-      const dateStr = today.toISOString().split('T')[0].replace(/-/g, '');
+      const date = new Date();
+      date.setDate(date.getDate() - 2);
+      const dateStr = date.toISOString().split('T')[0].replace(/-/g, '');
 
       const data = await nasaPowerAPI.getTemperatureData(
-        -1.9403, // Kigali
+        -1.9403,
         29.8739,
         dateStr,
         dateStr

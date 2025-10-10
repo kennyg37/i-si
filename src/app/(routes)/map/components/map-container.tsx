@@ -120,7 +120,6 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
     });
   }, [handleMapClick]);
 
-  // Handle map move to update viewport state
   const handleMove = useCallback(() => {
     if (!mapRef.current || !isMapReady) return;
 
@@ -128,10 +127,31 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
     const center = map.getCenter();
     const zoom = map.getZoom();
 
-    // Update current zoom level
     setCurrentZoom(zoom);
 
-    // Update viewport with the new values
+    if (selectedLayers.length > 0) {
+      const bounds = map.getBounds();
+      const rwandaBounds = {
+        north: RWANDA_BOUNDS.north,
+        south: RWANDA_BOUNDS.south,
+        east: RWANDA_BOUNDS.east,
+        west: RWANDA_BOUNDS.west
+      };
+      if (
+        !bounds ||
+        bounds.getNorth() > rwandaBounds.north + 2 ||
+        bounds.getSouth() < rwandaBounds.south - 2 ||
+        bounds.getEast() > rwandaBounds.east + 2 ||
+        bounds.getWest() < rwandaBounds.west - 2
+      ) {
+        map.fitBounds([
+          [rwandaBounds.west, rwandaBounds.south],
+          [rwandaBounds.east, rwandaBounds.north]
+        ], { padding: 20, duration: 800 });
+        return;
+      }
+    }
+
     setViewport({
       latitude: center.lat,
       longitude: center.lng,
@@ -139,7 +159,7 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
       bearing: map.getBearing(),
       pitch: map.getPitch(),
     });
-  }, [isMapReady, setViewport]);
+  }, [isMapReady, setViewport, selectedLayers]);
 
   // Copy coordinates to clipboard
   const copyToClipboard = useCallback((coords: Coordinates) => {
@@ -393,8 +413,8 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
             bearing: 0,
             pitch: 0,
           }}
-          minZoom={6}
-          maxZoom={18}
+          minZoom={2}
+          maxZoom={22}
           style={{ width: '100%', height: '100%' }}
           mapStyle={`mapbox://styles/mapbox/${mapStyle}`}
           onLoad={handleMapLoad}

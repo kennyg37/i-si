@@ -22,5 +22,28 @@
     "createdAt": "2025-10-10T12:58:47.360Z",
     "unsubscribeToken": "e7fd0ba5947020601f6674ed9ec413c52a892dbbbd46f504a9e0a1d698d0fa1c",
     "verifiedAt": "2025-10-10T12:59:27.406Z"
+  },
+  {
+    "id": "2c3636cde520e693bd3eaa31f8937870",
+    "email": "kenganza100@gmail.com",
+    "coordinates": {
+      "lat": -1.9464192,
+      "lon": 30.0875776
+    },
+    "preferences": {
+      "eventTypes": {
+        "heatWave": true,
+        "coldWave": true,
+        "drought": true,
+        "flood": true,
+        "storm": true,
+        "heavyRain": true
+      },
+      "minSeverity": "moderate",
+      "frequency": "immediate"
+    },
+    "isActive": false,
+    "createdAt": "2025-10-10T19:24:06.615Z",
+    "unsubscribeToken": "bd6cef3b6d3beee70c6213a39d6efd3eca3815f8fba3280f9c9195012a82931b"
   }
 ]
