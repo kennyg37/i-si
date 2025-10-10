@@ -7,11 +7,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Download, RefreshCw, Calendar, History, TrendingUp } from 'lucide-react';
-import { useHistoricalTemperature, useHistoricalPrecipitation, useClimateStatistics, useMultiLocationComparison } from '@/hooks/use-historical-climate-data';
+import { useHistoricalTemperature, useHistoricalPrecipitation, useClimateStatistics, useMultiLocationComparison, useHumidityData, useWindData, useSolarRadiationData } from '@/hooks/use-historical-climate-data';
 import { TemperatureChart } from '@/components/charts/temperature-chart';
 import { PrecipitationChart } from '@/components/charts/precipitation-chart';
 import { ComparisonChart } from '@/components/charts/comparison-chart';
 import { StatisticsCards } from '@/components/charts/statistics-cards';
+import { HumidityChart } from '@/components/charts/humidity-chart';
+import { WindChart } from '@/components/charts/wind-chart';
+import { SolarRadiationChart } from '@/components/charts/solar-radiation-chart';
 import { SatelliteAnalytics } from './components/satellite-analytics';
 import { ClimateIndicesDashboard } from './components/climate-indices-dashboard';
 import { ExtremeWeatherEvents } from './components/extreme-weather-events';
@@ -20,15 +23,20 @@ import { InsightsAIHelper } from '@/components/insights-ai-helper';
 import toast from 'react-hot-toast';
 
 type ViewMode = 'current' | 'historical';
+type ChartType = 'line' | 'bar' | 'area';
 
 export default function InsightsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('current');
   const [timeRange, setTimeRange] = useState<number>(30);
+  const [chartType, setChartType] = useState<ChartType>('line');
 
   const { data: tempData, isLoading: tempLoading, refetch: refetchTemp } = useHistoricalTemperature(timeRange);
   const { data: precipData, isLoading: precipLoading, refetch: refetchPrecip } = useHistoricalPrecipitation(timeRange);
   const { data: stats, isLoading: statsLoading } = useClimateStatistics(timeRange);
   const { data: comparisonData, isLoading: comparisonLoading } = useMultiLocationComparison();
+  const { data: humidityData } = useHumidityData(timeRange);
+  const { data: windData } = useWindData(timeRange);
+  const { data: solarData} = useSolarRadiationData(timeRange);
 
   const handleRefresh = () => {
     refetchTemp();
@@ -100,9 +108,8 @@ export default function InsightsPage() {
             </div>
           </div>
 
-          {/* Controls - Only show for current mode */}
           {viewMode === 'current' && (
-            <div className="flex items-center gap-3 mt-4 justify-end">
+            <div className="flex items-center gap-3 mt-4 justify-end flex-wrap">
               <Select value={timeRange.toString()} onValueChange={(v) => setTimeRange(Number(v))}>
                 <SelectTrigger className="w-[180px]">
                   <Calendar className="h-4 w-4 mr-2" />
@@ -114,6 +121,17 @@ export default function InsightsPage() {
                   <SelectItem value="30">Last 30 days</SelectItem>
                   <SelectItem value="60">Last 60 days</SelectItem>
                   <SelectItem value="90">Last 90 days</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={chartType} onValueChange={(v: ChartType) => setChartType(v)}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="line">Line Chart</SelectItem>
+                  <SelectItem value="bar">Bar Chart</SelectItem>
+                  <SelectItem value="area">Area Chart</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -130,10 +148,11 @@ export default function InsightsPage() {
         </div>
 
         {/* Conditional Content Based on View Mode */}
-        {viewMode === 'historical' ? (
-          /* Historical Mode */
+        {viewMode === 'historical' && (
           <HistoricalMode lat={-1.9403} lon={29.8739} locationName="Kigali, Rwanda" />
-        ) : (
+        )}
+
+        {viewMode === 'current' && (
           /* Current Insights Mode */
           <>
             {/* Statistics Cards */}
@@ -164,11 +183,10 @@ export default function InsightsPage() {
                 <TabsTrigger value="extreme">Extreme</TabsTrigger>
               </TabsList>
 
-          {/* Overview Tab */}
           <TabsContent value="overview" className="mt-6 space-y-6">
             {isLoading ? (
               <div className="grid md:grid-cols-2 gap-6">
-                {[1, 2].map((i) => (
+                {[1, 2, 3, 4].map((i) => (
                   <Card key={i}>
                     <CardContent className="pt-6">
                       <div className="animate-pulse space-y-3">
@@ -181,37 +199,41 @@ export default function InsightsPage() {
               </div>
             ) : (
               <div className="grid md:grid-cols-2 gap-6">
-                {tempData && (
-                  <TemperatureChart data={tempData} trend={stats?.temperature.trend} />
-                )}
-                {precipData && (
-                  <PrecipitationChart data={precipData} />
-                )}
+                {tempData && <TemperatureChart data={tempData} trend={stats?.temperature.trend} chartType={chartType} />}
+                {precipData && <PrecipitationChart data={precipData} chartType={chartType} />}
+                {humidityData && <HumidityChart data={humidityData} chartType={chartType} />}
+                {windData && <WindChart data={windData} chartType={chartType} />}
               </div>
             )}
 
-            {/* Quick Insights */}
-            <Card>
-              <CardHeader>
-                <CardTitle>📊 Quick Insights</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="p-4 bg-muted rounded-lg">
-                    <p className="text-sm font-medium mb-1">Hottest Day</p>
-                    <p className="text-2xl font-bold">{stats?.temperature.max.toFixed(1)}°C</p>
+            <div className="grid md:grid-cols-2 gap-6">
+              {solarData && <SolarRadiationChart data={solarData} chartType={chartType} />}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quick Insights</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-xs font-medium mb-1">Hottest Day</p>
+                      <p className="text-xl font-bold">{stats?.temperature.max.toFixed(1)}°C</p>
+                    </div>
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-xs font-medium mb-1">Coolest Day</p>
+                      <p className="text-xl font-bold">{stats?.temperature.min.toFixed(1)}°C</p>
+                    </div>
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-xs font-medium mb-1">Wettest Day</p>
+                      <p className="text-xl font-bold">{stats?.precipitation.max.toFixed(1)} mm</p>
+                    </div>
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-xs font-medium mb-1">Total Rain</p>
+                      <p className="text-xl font-bold">{stats?.precipitation.total.toFixed(0)} mm</p>
+                    </div>
                   </div>
-                  <div className="p-4 bg-muted rounded-lg">
-                    <p className="text-sm font-medium mb-1">Coolest Day</p>
-                    <p className="text-2xl font-bold">{stats?.temperature.min.toFixed(1)}°C</p>
-                  </div>
-                  <div className="p-4 bg-muted rounded-lg">
-                    <p className="text-sm font-medium mb-1">Wettest Day</p>
-                    <p className="text-2xl font-bold">{stats?.precipitation.max.toFixed(1)} mm</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Detailed Analysis Tab */}
@@ -296,13 +318,13 @@ export default function InsightsPage() {
               </Card>
             </div>
 
-            {/* Combined Chart */}
-            {tempData && precipData && (
-              <div className="grid lg:grid-cols-1 gap-6">
-                <TemperatureChart data={tempData} trend={stats?.temperature.trend} />
-                <PrecipitationChart data={precipData} />
-              </div>
-            )}
+            <div className="grid lg:grid-cols-2 gap-6">
+              {tempData && <TemperatureChart data={tempData} trend={stats?.temperature.trend} chartType={chartType} />}
+              {precipData && <PrecipitationChart data={precipData} chartType={chartType} />}
+              {humidityData && <HumidityChart data={humidityData} chartType={chartType} />}
+              {windData && <WindChart data={windData} chartType={chartType} />}
+              {solarData && <SolarRadiationChart data={solarData} chartType={chartType} />}
+            </div>
           </TabsContent>
 
           {/* Comparison Tab */}

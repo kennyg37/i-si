@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Cloud, Droplets, Wind, Sun, Thermometer } from 'lucide-react';
+import { Cloud, Sun, Thermometer } from 'lucide-react';
 import { nasaPowerAPI } from '@/lib/api/nasa-power';
 
 export function LiveWeatherWidget() {

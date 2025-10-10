@@ -14,6 +14,9 @@ export interface HistoricalDataPoint {
   tempMax?: number;
   tempMin?: number;
   precipitation?: number;
+  humidity?: number;
+  windSpeed?: number;
+  solarRadiation?: number;
 }
 
 export function useHistoricalTemperature(days: number = 30) {
@@ -178,8 +181,52 @@ export function useMultiLocationComparison() {
   });
 }
 
+export function useHumidityData(days: number = 30) {
+  return useQuery({
+    queryKey: ['humidity-data', days],
+    queryFn: async () => {
+      const endDate = new Date();
+      const startDate = subDays(endDate, days);
+      const data = await nasaPowerAPI.getHumidityData(-1.9403, 29.8739, format(startDate, 'yyyyMMdd'), format(endDate, 'yyyyMMdd'));
+      if (!data?.properties?.parameter?.RH2M) return [];
+      const humidity = data.properties.parameter.RH2M;
+      return Object.keys(humidity).map(dateStr => ({ date: formatDate(dateStr), humidity: isValidValue(humidity[dateStr]) ? humidity[dateStr] : 0 })).filter(d => d.humidity !== 0);
+    },
+    staleTime: 1000 * 60 * 30,
+  });
+}
+
+export function useWindData(days: number = 30) {
+  return useQuery({
+    queryKey: ['wind-data', days],
+    queryFn: async () => {
+      const endDate = new Date();
+      const startDate = subDays(endDate, days);
+      const data = await nasaPowerAPI.getWindData(-1.9403, 29.8739, format(startDate, 'yyyyMMdd'), format(endDate, 'yyyyMMdd'));
+      if (!data?.properties?.parameter?.WS10M) return [];
+      const wind = data.properties.parameter.WS10M;
+      return Object.keys(wind).map(dateStr => ({ date: formatDate(dateStr), windSpeed: isValidValue(wind[dateStr]) ? wind[dateStr] : 0 })).filter(d => d.windSpeed !== 0);
+    },
+    staleTime: 1000 * 60 * 30,
+  });
+}
+
+export function useSolarRadiationData(days: number = 30) {
+  return useQuery({
+    queryKey: ['solar-radiation-data', days],
+    queryFn: async () => {
+      const endDate = new Date();
+      const startDate = subDays(endDate, days);
+      const data = await nasaPowerAPI.getSolarData(-1.9403, 29.8739, format(startDate, 'yyyyMMdd'), format(endDate, 'yyyyMMdd'));
+      if (!data?.properties?.parameter?.ALLSKY_SFC_SW_DWN) return [];
+      const solar = data.properties.parameter.ALLSKY_SFC_SW_DWN;
+      return Object.keys(solar).map(dateStr => ({ date: formatDate(dateStr), solarRadiation: isValidValue(solar[dateStr]) ? solar[dateStr] : 0 })).filter(d => d.solarRadiation !== 0);
+    },
+    staleTime: 1000 * 60 * 30,
+  });
+}
+
 function formatDate(dateStr: string): string {
-  // Convert YYYYMMDD to YYYY-MM-DD
   if (dateStr.length === 8) {
     return `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}`;
   }

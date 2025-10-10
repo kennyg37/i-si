@@ -192,14 +192,6 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
         coordinates: geoCoordinates,
         timestamp: new Date(),
       });
-
-      toast.success(
-        `Your location: ${geoCoordinates.lat.toFixed(5)}°, ${geoCoordinates.lon.toFixed(5)}°`,
-        {
-          duration: 3000,
-          icon: '📍',
-        }
-      );
     }
   }, [geoCoordinates, geoError, handleMapClick]);
 

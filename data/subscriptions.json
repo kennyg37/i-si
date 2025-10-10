@@ -1,0 +1,26 @@
+[
+  {
+    "id": "e54fcc9440021646401b961f454823b7",
+    "email": "k.ganza@alustudent.com",
+    "coordinates": {
+      "lat": -1.96608,
+      "lon": 30.0941312
+    },
+    "preferences": {
+      "eventTypes": {
+        "heatWave": true,
+        "coldWave": true,
+        "drought": true,
+        "flood": true,
+        "storm": true,
+        "heavyRain": true
+      },
+      "minSeverity": "moderate",
+      "frequency": "immediate"
+    },
+    "isActive": true,
+    "createdAt": "2025-10-10T12:58:47.360Z",
+    "unsubscribeToken": "e7fd0ba5947020601f6674ed9ec413c52a892dbbbd46f504a9e0a1d698d0fa1c",
+    "verifiedAt": "2025-10-10T12:59:27.406Z"
+  }
+]

@@ -7,7 +7,6 @@ import { LayerControls } from './components/layer-controls';
 import { MapLegend } from './components/map-legend';
 import { RiskSummary } from './components/risk-summary';
 import { LocationDataPanel } from './components/location-data-panel';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function MapPage() {

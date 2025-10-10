@@ -3,7 +3,6 @@
 import { useClickedCoordinates, useSelectedLocation } from '@/lib/store/map-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Navigation } from 'lucide-react';
-import type { Coordinates } from '@/types';
 
 export function CoordinateDisplay() {
   const clickedCoordinates = useClickedCoordinates();

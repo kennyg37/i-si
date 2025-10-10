@@ -6,7 +6,7 @@
  * based on past rainfall trends and environmental factors.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { calculateFloodPrediction } from '@/lib/data/flood-prediction';
 import type { FloodPredictionData, Coordinates, TimeRange } from '@/types/climate-risk';

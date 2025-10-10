@@ -91,7 +91,7 @@ export async function calculateFloodRisk(
   const [rainfallData, terrainData, ndviValue, historicalFloods] = await Promise.all([
     fetchRainfallData(latitude, longitude, startDate, endDate),
     fetchTerrainData(latitude, longitude),
-    fetchNDVI(latitude, longitude),
+    fetchNDVI(),
     fetchHistoricalFloods(latitude, longitude)
   ]);
 
@@ -168,7 +168,7 @@ async function fetchRainfallData(
 ) {
   try {
     const data = await nasaPowerAPI.getRainfallData(lat, lon, startDate, endDate);
-    const values = data.properties?.parameter?.PRECTOTCORR
+    const values = data?.properties?.parameter?.PRECTOTCORR
       ? Object.values(data.properties.parameter.PRECTOTCORR).filter(
           (p): p is number => typeof p === 'number' && p >= 0
         )
@@ -197,7 +197,7 @@ async function fetchTerrainData(lat: number, lon: number) {
 /**
  * Fetch NDVI from Sentinel Hub
  */
-async function fetchNDVI(lat: number, lon: number): Promise<number | null> {
+async function fetchNDVI(): Promise<number | null> {
   try {
     // Mock NDVI value for now
     const mockNDVI = 0.3 + Math.random() * 0.5;
@@ -395,7 +395,7 @@ function calculateHistoricalFrequencyRisk(historicalEvents: any[]): FloodRiskCom
     );
     lastFloodDate = sortedEvents[0].date;
     daysSinceLastFlood = Math.floor(
-      (Date.now() - new Date(lastFloodDate).getTime()) / (24 * 60 * 60 * 1000)
+      (Date.now() - new Date(lastFloodDate || "").getTime()) / (24 * 60 * 60 * 1000)
     );
 
     // Recent flood increases risk (soil saturation)

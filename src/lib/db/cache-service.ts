@@ -290,8 +290,8 @@ export const forecastCache = {
 
 // Extreme events cache
 export const extremeEventsCache = {
-  get: (key: string) => getCachedData(STORES.EXTREME_EVENTS, key),
-  set: (key: string, data: any) =>
+  get: <T = any>(key: string) => getCachedData<T>(STORES.EXTREME_EVENTS, key),
+  set: <T = any>(key: string, data: T) =>
     setCachedData(STORES.EXTREME_EVENTS, key, data, CACHE_DURATION.EVENTS),
 };
 

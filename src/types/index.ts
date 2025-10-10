@@ -55,6 +55,7 @@ export interface NASAPowerParams {
 }
 
 export interface NASAPowerResponse {
+  parameters: any | undefined;
   geometry: {
     type: string;
     coordinates: [number, number];

@@ -3,10 +3,45 @@ import { z } from 'zod';
 import { nasaPowerAPI } from '../api/nasa-power';
 import { srtmAPI } from '../api/srtm';
 import { floodRiskAPI } from '../api/flood-risk';
+import { resolveLocation, getAllLocations } from '../context/location-resolver';
 
 /**
- * AI Tools - Allow AI agents to access real climate data
+ * AI Tools - Allow AI agents to access real climate data with smart location resolution
  */
+
+/**
+ * Resolve location names to coordinates
+ */
+export const resolveLocationQuery = tool({
+  description: 'Resolve location names (cities, provinces, regions) to coordinates for Rwanda. Use this when user mentions a place name instead of coordinates.',
+  inputSchema: zodSchema(z.object({
+    locationQuery: z.string().describe('City name, province, region, or area name in Rwanda (e.g., "Kigali", "northern Rwanda", "Eastern Province")'),
+  })),
+  execute: async ({ locationQuery }) => {
+    const result = resolveLocation(locationQuery);
+
+    if (result.found && result.location) {
+      return {
+        success: true,
+        location: result.location,
+        name: result.name,
+        type: result.type,
+        confidence: result.confidence,
+        message: `Resolved "${locationQuery}" to ${result.name} at coordinates ${result.location.lat.toFixed(4)}°, ${result.location.lon.toFixed(4)}°`,
+        suggestion: result.suggestion,
+      };
+    }
+
+    // Return alternatives
+    const locations = getAllLocations();
+    return {
+      success: false,
+      alternatives: locations.cities.slice(0, 5).map(c => c.name),
+      message: `Could not find location "${locationQuery}". Available cities: ${locations.cities.slice(0, 5).map(c => c.name).join(', ')}`,
+      suggestion: 'Try using one of the available city names or ask about a general region',
+    };
+  },
+});
 
 export const getRainfallData = tool({
   description: 'Get rainfall data for a specific location and date range using NASA POWER API',
@@ -204,7 +239,7 @@ export const getMapView = tool({
   inputSchema: zodSchema(z.object({
     requestType: z.enum(['current', 'bounds']).describe('Type of map info to retrieve'),
   })),
-  execute: async ({ requestType }) => {
+  execute: async () => {
     // This tool provides a way for the AI to understand map context
     // In a real implementation, this would access the map store
     return {
@@ -256,10 +291,7 @@ export const compareLocations = tool({
   execute: async ({ locations }) => {
     const results = await Promise.all(
       locations.map(async (loc) => {
-        const [floodRisk, elevationData] = await Promise.all([
-          floodRiskAPI.calculateFloodRisk(loc.latitude, loc.longitude),
-          // Could add more parallel data fetches here
-        ]);
+        const floodRisk = await floodRiskAPI.calculateFloodRisk(loc.latitude, loc.longitude);
 
         return {
           name: loc.name,
@@ -283,6 +315,7 @@ export const compareLocations = tool({
  * Export all tools for AI agents
  */
 export const climateTools = {
+  resolveLocationQuery,
   getRainfallData,
   getTemperatureData,
   getElevationData,

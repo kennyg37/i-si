@@ -1,6 +1,6 @@
 'use client';
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Thermometer, TrendingUp, TrendingDown } from 'lucide-react';
 
@@ -12,11 +12,13 @@ interface TemperatureChartProps {
     tempMin?: number;
   }>;
   trend?: 'increasing' | 'decreasing' | 'stable';
+  chartType?: 'line' | 'bar' | 'area';
 }
 
-export function TemperatureChart({ data, trend = 'stable' }: TemperatureChartProps) {
+export function TemperatureChart({ data, trend = 'stable', chartType = 'area' }: TemperatureChartProps) {
   const TrendIcon = trend === 'increasing' ? TrendingUp : TrendingDown;
   const trendColor = trend === 'increasing' ? 'text-red-500' : trend === 'decreasing' ? 'text-blue-500' : 'text-gray-500';
+  console.log(chartType)
 
   return (
     <Card>

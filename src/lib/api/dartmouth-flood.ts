@@ -16,10 +16,6 @@
  * No API key required - public data service
  */
 
-import axios from 'axios';
-
-const DFO_BASE_URL = 'https://floodobservatory.colorado.edu';
-const DFO_ARCHIVE_URL = `${DFO_BASE_URL}/Archives`;
 
 // Rwanda bounding box
 const RWANDA_BBOX = {

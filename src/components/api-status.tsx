@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, CheckCircle, Clock, Wifi, WifiOff } from 'lucide-react';
+import { AlertCircle, CheckCircle, Wifi } from 'lucide-react';
 
 interface APIStatusProps {
   className?: string;

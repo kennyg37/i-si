@@ -95,7 +95,6 @@ function getRiskColor(risk: string, type: 'flood' | 'drought' | 'prediction'): s
 function getRiskLayerPaint(
   riskType: 'flood' | 'drought' | 'prediction',
   opacity: number = 0.6,
-  showLabels: boolean = false
 ) {
   return {
     'fill-color': [
@@ -136,7 +135,7 @@ function getRiskLayerPaint(
 /**
  * Generate line paint properties for outlines
  */
-function getOutlinePaint(riskType: 'flood' | 'drought' | 'prediction') {
+function getOutlinePaint() {
   return {
     'line-color': [
       'match',
@@ -199,14 +198,14 @@ export function MapLayers({
           <Layer
             id="flood-risk-layer"
             type="fill"
-            paint={getRiskLayerPaint('flood', opacity, showLabels) as any}
+            paint={getRiskLayerPaint('flood', opacity) as any}
           />
 
           {/* Outline layer */}
           <Layer
             id="flood-risk-outline"
             type="line"
-            paint={getOutlinePaint('flood') as any}
+            paint={getOutlinePaint() as any}
           />
           
           {/* Labels layer (optional) */}
@@ -239,14 +238,14 @@ export function MapLayers({
           <Layer
             id="drought-risk-layer"
             type="fill"
-            paint={getRiskLayerPaint('drought', opacity, showLabels) as any}
+            paint={getRiskLayerPaint('drought', opacity) as any}
           />
 
           {/* Outline layer */}
           <Layer
             id="drought-risk-outline"
             type="line"
-            paint={getOutlinePaint('drought') as any}
+            paint={getOutlinePaint() as any}
           />
           
           {/* Labels layer (optional) */}
@@ -279,14 +278,14 @@ export function MapLayers({
           <Layer
             id="flood-prediction-layer"
             type="fill"
-            paint={getRiskLayerPaint('prediction', opacity, showLabels) as any}
+            paint={getRiskLayerPaint('prediction', opacity) as any}
           />
 
           {/* Outline layer */}
           <Layer
             id="flood-prediction-outline"
             type="line"
-            paint={getOutlinePaint('prediction') as any}
+            paint={getOutlinePaint() as any}
           />
           
           {/* Labels layer (optional) */}

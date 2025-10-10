@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { fetchSatelliteData, SatelliteDataResponse, NDVIData, LandSurfaceTemperature, SoilMoisture, Evapotranspiration, LandUseData } from '@/lib/api/satellite-data';
+import { fetchSatelliteData, SatelliteDataResponse, NDVIData, LandSurfaceTemperature, SoilMoisture, LandUseData } from '@/lib/api/satellite-data';
 
 export interface UseSatelliteDataOptions {
   lat: number;

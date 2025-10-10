@@ -1,5 +1,4 @@
 import axios from 'axios';
-import type { SentinelHubParams, NDVIResponse } from '@/types';
 
 // Environment variables for Sentinel Hub configuration
 const SENTINEL_HUB_INSTANCE_ID = process.env.NEXT_PUBLIC_SENTINEL_HUB_INSTANCE_ID;
@@ -48,6 +47,7 @@ export class SentinelHubAPI {
   private ndwiLayerId: string;
   private falseColorLayerId: string;
   private baseURL = 'https://services.sentinel-hub.com/api/v1';
+  isMoistureConfigured: any;
 
   constructor() {
     this.instanceId = SENTINEL_HUB_INSTANCE_ID || '';

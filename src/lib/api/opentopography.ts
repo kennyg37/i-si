@@ -188,7 +188,7 @@ export class OpenTopographyAPI {
     bufferKm: number = 0.5
   ): Promise<{ elevation: number; slope: number }> {
     // Convert buffer to degrees (approximate)
-    const bufferDeg = bufferKm / 111; // 1 degree ≈ 111km
+    const bufferDeg = bufferKm / 115; // 1 degree ≈ 111km
 
     const bbox: [number, number, number, number] = [
       lon - bufferDeg,
@@ -210,7 +210,7 @@ export class OpenTopographyAPI {
    * @param buffer - ArrayBuffer containing GeoTIFF data
    * @returns Parsed elevation data
    */
-  private async parseGeoTIFF(_buffer: ArrayBuffer): Promise<ElevationData> {
+  private async parseGeoTIFF(data: any): Promise<ElevationData> {
     // Mock implementation with more realistic Rwanda terrain data
     // In production, use geotiff.js library to parse actual TIFF data
     // npm install geotiff
@@ -221,12 +221,12 @@ export class OpenTopographyAPI {
     // const image = await tiff.getImage();
     // const data = await image.readRasters();
 
-    console.log('[OpenTopography] Using mock terrain data (GeoTIFF parsing not implemented)');
+    console.log('[OpenTopography] Using mock terrain data (GeoTIFF parsing not implemented)', data);
 
     // Generate realistic elevation data for Rwanda
     // Rwanda elevation ranges from ~900m (Lake Kivu shores) to ~4500m (Volcanoes)
     // Most populated areas: 1400-1800m
-    const mockValues: number[][] = [];
+    
     const size = 5; // 5x5 grid for performance
     let min = Infinity;
     let max = -Infinity;
@@ -234,14 +234,14 @@ export class OpenTopographyAPI {
     let count = 0;
 
     for (let i = 0; i < size; i++) {
-      mockValues[i] = [];
+      data[i] = [];
       for (let j = 0; j < size; j++) {
         // Generate elevation with some variance (typical inhabited areas)
         const baseElevation = 1500; // Typical Rwanda elevation
         const variance = 300; // ±300m variance
         const value = baseElevation + (Math.random() - 0.5) * variance * 2;
 
-        mockValues[i][j] = value;
+        data[i][j] = value;
         min = Math.min(min, value);
         max = Math.max(max, value);
         sum += value;
@@ -250,7 +250,7 @@ export class OpenTopographyAPI {
     }
 
     const mean = sum / count;
-    const variance = mockValues.reduce((acc, row) => {
+    const variance = data.reduce((acc: any, row: any[]) => {
       return acc + row.reduce((rowAcc, val) => rowAcc + Math.pow(val - mean, 2), 0);
     }, 0) / count;
 
@@ -259,7 +259,7 @@ export class OpenTopographyAPI {
       max,
       mean,
       stdDev: Math.sqrt(variance),
-      values: mockValues
+      values: data
     };
   }
 

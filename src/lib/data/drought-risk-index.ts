@@ -27,7 +27,6 @@
  */
 
 import { nasaPowerAPI } from '../api/nasa-power';
-import { sentinelHubAPI } from '../api/sentinel-hub';
 
 export interface DroughtRiskInput {
   latitude: number;
@@ -82,8 +81,8 @@ export async function calculateDroughtRisk(
   const [rainfallData, temperatureData, ndviValue, ndwiValue] = await Promise.all([
     fetchRainfallData(latitude, longitude, startDate, endDate),
     fetchTemperatureData(latitude, longitude, startDate, endDate),
-    fetchNDVI(latitude, longitude),
-    fetchNDWI(latitude, longitude)
+    fetchNDVI(),
+    fetchNDWI()
   ]);
 
   // Calculate individual components
@@ -147,7 +146,7 @@ async function fetchRainfallData(
 ) {
   try {
     const data = await nasaPowerAPI.getRainfallData(lat, lon, startDate, endDate);
-    const values = data.properties?.parameter?.PRECTOTCORR
+    const values = data?.properties?.parameter?.PRECTOTCORR
       ? Object.values(data.properties.parameter.PRECTOTCORR).filter(
           (p): p is number => typeof p === 'number' && p >= 0
         )
@@ -171,7 +170,7 @@ async function fetchTemperatureData(
 ) {
   try {
     const data = await nasaPowerAPI.getTemperatureData(lat, lon, startDate, endDate);
-    const values = data.properties?.parameter?.T2M
+    const values = data?.properties?.parameter?.T2M
       ? Object.values(data.properties.parameter.T2M).filter(
           (t): t is number => typeof t === 'number' && !isNaN(t)
         )
@@ -187,15 +186,8 @@ async function fetchTemperatureData(
 /**
  * Fetch NDVI from Sentinel Hub
  */
-async function fetchNDVI(lat: number, lon: number): Promise<number | null> {
+async function fetchNDVI(): Promise<number | null> {
   try {
-    // Create small bbox around point (0.01 degrees ≈ 1km)
-    const bbox: [number, number, number, number] = [
-      lon - 0.005,
-      lat - 0.005,
-      lon + 0.005,
-      lat + 0.005
-    ];
 
     // For now, return mock NDVI value
     // In production, parse actual Sentinel Hub response
@@ -210,7 +202,7 @@ async function fetchNDVI(lat: number, lon: number): Promise<number | null> {
 /**
  * Fetch NDWI from Sentinel Hub
  */
-async function fetchNDWI(lat: number, lon: number): Promise<number | null> {
+async function fetchNDWI(): Promise<number | null> {
   try {
     // NDWI = (Green - NIR) / (Green + NIR)
     // For now, return mock value
@@ -240,7 +232,6 @@ function calculatePrecipitationDeficit(rainfallData: {
   }
 
   const actualMm = rainfallData.values.reduce((sum, val) => sum + val, 0);
-  const avgDailyMm = actualMm / rainfallData.values.length;
 
   // Rwanda normal rainfall: ~1000-1400mm/year = ~2.7-3.8mm/day
   const normalDailyMm = 3.2;

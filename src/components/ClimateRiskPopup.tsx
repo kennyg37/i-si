@@ -30,7 +30,7 @@ import {
   Info
 } from 'lucide-react';
 import { useRainfallData, useTemperatureData, useDroughtRisk, useFloodRisk } from '@/lib/hooks/use-climate-data';
-import { useNDVIData, useLandSurfaceTemperature, useSoilMoisture } from '@/hooks/use-satellite-data';
+import { useNDVIData, useSoilMoisture } from '@/hooks/use-satellite-data';
 import { calculateFloodPrediction } from '@/lib/data/flood-prediction';
 
 export interface ClimateRiskPopupProps {

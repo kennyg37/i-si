@@ -310,7 +310,7 @@ function generateWarningsAndRecommendations(
 
   // Historical context
   if (factors.historicalDensity > 0.5) {
-    warnings.push(`📊 ${factors.historicalDensity.toFixed(1)} landslides per 100km² historically - High-risk zone`);
+    warnings.push(`${factors.historicalDensity.toFixed(1)} landslides per 100km² historically - High-risk zone`);
     recommendations.push('Consult historical landslide maps before development');
   }
 

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertCircle, AlertTriangle, Thermometer, Droplets, Wind, CloudRain, TrendingUp, Calendar, MapPin } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Thermometer, Droplets, Wind, CloudRain, TrendingUp, Calendar } from 'lucide-react';
 import { useClickedCoordinates } from '@/lib/store/map-store';
 import { useExtremeWeatherEventsForTimeRange } from '@/hooks/use-extreme-weather-events';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -72,7 +72,7 @@ export function ExtremeWeatherEvents() {
 
   // Filter events based on selection
   const filteredEvents = useMemo(() => {
-    if (!eventsData?.events) return [];
+    if (!eventsData || !eventsData.events) return [];
 
     let events = eventsData.events;
 
@@ -85,11 +85,11 @@ export function ExtremeWeatherEvents() {
 
   // Calculate summary statistics from REAL data
   const summary = useMemo(() => {
-    if (!eventsData?.summary) {
+    if (!eventsData || !eventsData.summary) {
       return {
         totalEvents: 0,
-        eventsByType: {},
-        eventsBySeverity: {},
+        eventsByType: {} as Record<string, number>,
+        eventsBySeverity: {} as Record<string, number>,
         averageDuration: 0,
         totalImpact: 0
       };
@@ -146,7 +146,14 @@ export function ExtremeWeatherEvents() {
           <div className="grid md:grid-cols-3 gap-4">
             <div>
               <label className="text-sm font-medium mb-2 block">Time Range</label>
-              <Select value={selectedTimeRange} onValueChange={setSelectedTimeRange}>
+              <Select 
+                value={selectedTimeRange} 
+                onValueChange={(value) => {
+                  if (value === '30d' || value === '90d' || value === '1y' || value === '2y') {
+                    setSelectedTimeRange(value);
+                  }
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select time range" />
                 </SelectTrigger>
@@ -256,7 +263,7 @@ export function ExtremeWeatherEvents() {
       </div>
 
       {/* Active Weather Alerts */}
-      {eventsData?.alerts && eventsData.alerts.length > 0 && (
+      {eventsData && eventsData.alerts && eventsData.alerts.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">

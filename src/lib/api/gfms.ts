@@ -20,7 +20,6 @@
  * No API key required
  */
 
-import axios from 'axios';
 
 export interface GFMSFloodData {
   timestamp: string;
@@ -77,7 +76,7 @@ export class GFMSAPI {
       console.log(`[GFMS] Fetching current flood data for: ${lat}, ${lon}`);
 
       // Use Dartmouth Flood Observatory for REAL flood data
-      const { fetchRwandaFloods, calculateHistoricalFloodRisk } = await import('./dartmouth-flood');
+      const { fetchRwandaFloods } = await import('./dartmouth-flood');
 
       // Get floods from last 30 days
       const thirtyDaysAgo = new Date();
@@ -96,9 +95,6 @@ export class GFMSAPI {
 
       if (nearbyFlood) {
         // Active flood detected
-        const daysSinceStart = Math.floor(
-          (new Date().getTime() - new Date(nearbyFlood.began).getTime()) / (1000 * 60 * 60 * 24)
-        );
 
         return {
           timestamp: new Date().toISOString(),
@@ -265,12 +261,6 @@ export class GFMSAPI {
     }
   }
 
-  // ✅ NO MORE MOCK DATA!
-  // All flood data now comes from REAL Dartmouth Flood Observatory records
-
-  /**
-   * Check if GFMS API is configured
-   */
   isConfigured(): boolean {
     return true; // No API key required
   }

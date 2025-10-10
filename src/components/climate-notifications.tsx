@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 
 export function ClimateNotifications() {
   const [isEnabled, setIsEnabled] = useState(false);
-  const [permission, setPermission] = useState<NotificationPermission>('default');
+  const [, setPermission] = useState<NotificationPermission>('default');
 
   useEffect(() => {
     if ('Notification' in window) {

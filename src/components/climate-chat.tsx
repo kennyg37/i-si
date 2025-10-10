@@ -79,21 +79,6 @@ export function ClimateChat({ agent = 'climateAnalyst', initialMessage }: Climat
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Auto-speak assistant responses
-  useEffect(() => {
-    if (messages.length > 0) {
-      const lastMessage = messages[messages.length - 1];
-      if (lastMessage.role === 'assistant' && !isLoading) {
-        const text = getMessageText(lastMessage);
-        if (text && 'speechSynthesis' in window) {
-          const utterance = new SpeechSynthesisUtterance(text);
-          utterance.onstart = () => setIsSpeaking(true);
-          utterance.onend = () => setIsSpeaking(false);
-          window.speechSynthesis.speak(utterance);
-        }
-      }
-    }
-  }, [messages, isLoading]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,6 +95,16 @@ export function ClimateChat({ agent = 'climateAnalyst', initialMessage }: Climat
     } else {
       recognitionRef.current?.start();
       setIsListening(true);
+    }
+  };
+
+  const speakMessage = (text: string) => {
+    if (text && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      window.speechSynthesis.speak(utterance);
     }
   };
 
@@ -147,7 +142,7 @@ export function ClimateChat({ agent = 'climateAnalyst', initialMessage }: Climat
           title: 'Climate Chat - I-Si',
           text: chatText,
         });
-      } catch (err) {
+      } catch {
         console.log('Share cancelled');
       }
     } else {
@@ -243,10 +238,10 @@ export function ClimateChat({ agent = 'climateAnalyst', initialMessage }: Climat
               <div className="mt-4 space-y-2 text-xs">
                 <p>Try asking:</p>
                 <p className="font-mono bg-muted p-2 rounded">
-                  "What's the flood risk near Kigali?"
+                  What is the flood risk near Kigali?
                 </p>
                 <p className="font-mono bg-muted p-2 rounded">
-                  "How much rain fell in the last 30 days?"
+                  How much rain fell in the last 30 days?
                 </p>
               </div>
             </div>
@@ -279,7 +274,20 @@ export function ClimateChat({ agent = 'climateAnalyst', initialMessage }: Climat
                   }`}
                 >
                   {textContent && (
-                    <p className="text-sm whitespace-pre-wrap">{textContent}</p>
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm whitespace-pre-wrap flex-1">{textContent}</p>
+                      {message.role === 'assistant' && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 flex-shrink-0"
+                          onClick={() => speakMessage(textContent)}
+                          title="Read aloud"
+                        >
+                          <Volume2 className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
                   )}
 
                   {/* Tool Calls */}

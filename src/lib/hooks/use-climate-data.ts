@@ -1,4 +1,4 @@
-import { useQuery, UseQueryResult } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { nasaPowerAPI, sentinelHubAPI, srtmAPI } from '../api';
 
 

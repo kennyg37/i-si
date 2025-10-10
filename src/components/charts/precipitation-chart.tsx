@@ -9,9 +9,11 @@ interface PrecipitationChartProps {
     date: string;
     precipitation?: number;
   }>;
+  chartType?: 'line' | 'bar' | 'area';
 }
 
-export function PrecipitationChart({ data }: PrecipitationChartProps) {
+export function PrecipitationChart({ data, chartType = 'bar' }: PrecipitationChartProps) {
+  console.log(chartType)
   return (
     <Card>
       <CardHeader>

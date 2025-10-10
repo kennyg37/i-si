@@ -44,7 +44,7 @@ export function useFloodRiskGrid(
  * Convert flood risk data to GeoJSON features
  */
 export function floodRiskToGeoJSON(riskData: FloodRiskData[]): GeoJSON.FeatureCollection {
-  const features: GeoJSON.Feature[] = riskData.map((risk, index) => {
+  const features: GeoJSON.Feature[] = riskData.map((risk) => {
     // Create a small polygon around each point (approximately 0.1 degree radius)
     const lat = risk.coordinates.lat;
     const lon = risk.coordinates.lon;

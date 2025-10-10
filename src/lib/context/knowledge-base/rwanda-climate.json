@@ -1,0 +1,262 @@
+{
+  "overview": {
+    "climateType": "Tropical highland temperate",
+    "annualRainfall": "800-1400mm",
+    "avgTemperature": "15-25°C",
+    "humidity": "60-80%",
+    "characteristics": ["Two rainy seasons", "Two dry seasons", "Moderate temperatures", "High altitude moderation"]
+  },
+  "seasons": [
+    {
+      "name": "Long Dry Season",
+      "months": ["June", "July", "August", "September"],
+      "monthNumbers": [6, 7, 8, 9],
+      "duration": "4 months",
+      "characteristics": {
+        "rainfall": "Minimal (20-40mm/month)",
+        "temperature": "Cool to moderate (15-22°C)",
+        "humidity": "Low (50-60%)",
+        "conditions": "Dry, sunny, cool nights"
+      },
+      "impacts": {
+        "agriculture": "Harvest season, irrigation needed",
+        "water": "Low water levels, conservation needed",
+        "health": "Respiratory issues from dust",
+        "energy": "Peak hydropower challenges"
+      },
+      "risks": ["Drought", "Water scarcity", "Bush fires", "Dust storms"]
+    },
+    {
+      "name": "Short Rainy Season",
+      "months": ["October", "November", "December"],
+      "monthNumbers": [10, 11, 12],
+      "duration": "3 months",
+      "characteristics": {
+        "rainfall": "Moderate (80-120mm/month)",
+        "temperature": "Moderate (17-24°C)",
+        "humidity": "High (65-75%)",
+        "conditions": "Intermittent rains, cloudy"
+      },
+      "impacts": {
+        "agriculture": "First planting season begins",
+        "water": "Replenishing reservoirs",
+        "health": "Malaria risk increases",
+        "transport": "Some road disruptions"
+      },
+      "risks": ["Flash floods", "Landslides", "Waterborne diseases"]
+    },
+    {
+      "name": "Short Dry Season",
+      "months": ["January", "February"],
+      "monthNumbers": [1, 2],
+      "duration": "2 months",
+      "characteristics": {
+        "rainfall": "Low (40-60mm/month)",
+        "temperature": "Warm (18-25°C)",
+        "humidity": "Moderate (55-65%)",
+        "conditions": "Brief dry spell, warm"
+      },
+      "impacts": {
+        "agriculture": "Mid-season dry spell",
+        "water": "Adequate levels",
+        "health": "Good conditions",
+        "tourism": "Peak season"
+      },
+      "risks": ["Crop stress", "Minor water shortages"]
+    },
+    {
+      "name": "Long Rainy Season",
+      "months": ["March", "April", "May"],
+      "monthNumbers": [3, 4, 5],
+      "duration": "3 months",
+      "characteristics": {
+        "rainfall": "Heavy (120-200mm/month)",
+        "temperature": "Cool to moderate (16-23°C)",
+        "humidity": "Very high (70-85%)",
+        "conditions": "Frequent heavy rains, thunderstorms"
+      },
+      "impacts": {
+        "agriculture": "Main planting season",
+        "water": "Maximum water levels",
+        "health": "Highest malaria risk",
+        "transport": "Significant road disruptions"
+      },
+      "risks": ["Severe flooding", "Landslides", "Soil erosion", "Infrastructure damage", "Crop damage"]
+    }
+  ],
+  "climateZones": [
+    {
+      "zone": "Tropical Highland",
+      "elevation": "1500-2500m",
+      "location": ["Kigali", "Central Plateau", "Northern mountains"],
+      "avgTemperature": "15-21°C",
+      "avgRainfall": "1000-1400mm/year",
+      "characteristics": ["Moderate temperatures", "Year-round pleasant climate", "High rainfall", "Cool nights"],
+      "vegetation": ["Forest", "Grasslands", "Tea plantations"],
+      "suitableFor": ["Tea", "Coffee", "Potatoes", "Beans"]
+    },
+    {
+      "zone": "Tropical Lowland Savanna",
+      "elevation": "900-1500m",
+      "location": ["Eastern Province", "Akagera region"],
+      "avgTemperature": "20-25°C",
+      "avgRainfall": "700-1000mm/year",
+      "characteristics": ["Warmer temperatures", "Lower rainfall", "Distinct dry seasons", "Savanna vegetation"],
+      "vegetation": ["Savanna grasslands", "Acacia trees", "Shrublands"],
+      "suitableFor": ["Cattle", "Maize", "Cassava", "Sorghum"]
+    },
+    {
+      "zone": "Afro-Alpine",
+      "elevation": "2500-4507m",
+      "location": ["Volcanoes National Park", "Mount Karisimbi"],
+      "avgTemperature": "5-15°C",
+      "avgRainfall": "1400-2000mm/year",
+      "characteristics": ["Cool to cold", "High rainfall", "Frequent mist", "Unique alpine flora"],
+      "vegetation": ["Alpine meadows", "Bamboo forests", "Hagenia-Hypericum woodland"],
+      "suitableFor": ["Pyrethrum", "Limited agriculture", "Tourism", "Conservation"]
+    },
+    {
+      "zone": "Lake Shore",
+      "elevation": "1460-1500m",
+      "location": ["Lake Kivu shores", "Western Province"],
+      "avgTemperature": "18-24°C",
+      "avgRainfall": "1200-1600mm/year",
+      "characteristics": ["Moderated by lake", "High humidity", "Heavy rainfall", "Warm and moist"],
+      "vegetation": ["Tropical forest", "Plantations"],
+      "suitableFor": ["Tea", "Coffee", "Bananas", "Fishing"]
+    }
+  ],
+  "commonRisks": [
+    {
+      "type": "Flooding",
+      "severity": "High",
+      "season": "March-May (Long Rains)",
+      "peakMonths": [3, 4, 5],
+      "highRiskAreas": [
+        "Kigali (Nyabarongo River Basin)",
+        "Rusizi District",
+        "Nyagatare (Eastern Province)",
+        "Ngororero (Western Province)"
+      ],
+      "causes": ["Heavy rainfall", "Steep terrain", "Poor drainage", "Deforestation"],
+      "impacts": ["Property damage", "Displacement", "Infrastructure damage", "Agricultural losses", "Waterborne diseases"],
+      "prevention": ["Early warning systems", "Drainage improvement", "Terracing", "Reforestation", "Wetland conservation"]
+    },
+    {
+      "type": "Drought",
+      "severity": "Moderate to High",
+      "season": "June-September (Long Dry)",
+      "peakMonths": [7, 8, 9],
+      "highRiskAreas": [
+        "Eastern Province (Nyagatare, Kirehe, Kayonza)",
+        "Southeastern regions (Ngoma, Bugesera)"
+      ],
+      "causes": ["Extended dry periods", "Low rainfall", "High evaporation", "Climate variability"],
+      "impacts": ["Crop failure", "Food insecurity", "Water scarcity", "Livestock losses", "Malnutrition"],
+      "prevention": ["Irrigation systems", "Drought-resistant crops", "Water harvesting", "Early warning", "Crop diversification"]
+    },
+    {
+      "type": "Landslides",
+      "severity": "Moderate",
+      "season": "March-May (Long Rains)",
+      "peakMonths": [3, 4, 5],
+      "highRiskAreas": [
+        "Northern Province (Mountainous areas)",
+        "Western Province (Steep slopes)",
+        "Kigali (Hills and slopes)"
+      ],
+      "causes": ["Heavy rainfall", "Steep slopes", "Deforestation", "Poor land use", "Soil saturation"],
+      "impacts": ["Deaths", "Property loss", "Road blockages", "Infrastructure damage"],
+      "prevention": ["Terracing", "Afforestation", "Slope stabilization", "Land use planning", "Early warning"]
+    },
+    {
+      "type": "Hail Storms",
+      "severity": "Low to Moderate",
+      "season": "Transition periods",
+      "peakMonths": [10, 11, 3],
+      "highRiskAreas": ["High altitude regions", "Central Plateau"],
+      "causes": ["Convective storms", "Altitude", "Temperature contrasts"],
+      "impacts": ["Crop damage", "Property damage", "Injuries"],
+      "prevention": ["Crop insurance", "Early warning", "Protected cultivation"]
+    },
+    {
+      "type": "Strong Winds",
+      "severity": "Low to Moderate",
+      "season": "Dry seasons",
+      "peakMonths": [7, 8, 1],
+      "highRiskAreas": ["Open plains", "Eastern Province", "Hilltops"],
+      "causes": ["Pressure systems", "Topography", "Seasonal patterns"],
+      "impacts": ["Roof damage", "Tree falls", "Power outages"],
+      "prevention": ["Sturdy construction", "Windbreaks", "Early warning"]
+    }
+  ],
+  "monthlyPatterns": {
+    "January": { "rainfall": "medium-low", "temperature": "warm", "risk": "low" },
+    "February": { "rainfall": "low", "temperature": "warm", "risk": "low" },
+    "March": { "rainfall": "high", "temperature": "moderate", "risk": "flood-high" },
+    "April": { "rainfall": "very-high", "temperature": "moderate", "risk": "flood-very-high" },
+    "May": { "rainfall": "high", "temperature": "moderate", "risk": "flood-high" },
+    "June": { "rainfall": "low", "temperature": "cool", "risk": "drought-low" },
+    "July": { "rainfall": "very-low", "temperature": "cool", "risk": "drought-medium" },
+    "August": { "rainfall": "very-low", "temperature": "moderate", "risk": "drought-high" },
+    "September": { "rainfall": "low", "temperature": "moderate", "risk": "drought-medium" },
+    "October": { "rainfall": "medium", "temperature": "moderate", "risk": "low" },
+    "November": { "rainfall": "medium-high", "temperature": "moderate", "risk": "flood-low" },
+    "December": { "rainfall": "medium", "temperature": "moderate", "risk": "low" }
+  },
+  "historicalEvents": [
+    {
+      "year": 2023,
+      "event": "Heavy floods in Kigali",
+      "month": "May",
+      "impact": "Over 130 deaths, widespread displacement",
+      "cause": "Extreme rainfall during long rainy season"
+    },
+    {
+      "year": 2022,
+      "event": "Eastern Province drought",
+      "month": "August-September",
+      "impact": "Crop failures, food insecurity",
+      "cause": "Extended dry period, below-average rainfall"
+    },
+    {
+      "year": 2020,
+      "event": "Lake Kivu flooding",
+      "month": "April",
+      "impact": "Lakeside communities displaced",
+      "cause": "Rising lake levels, heavy rains"
+    }
+  ],
+  "adaptationStrategies": [
+    {
+      "strategy": "Terracing",
+      "purpose": "Prevent soil erosion and landslides",
+      "regions": ["Hilly areas", "All provinces"],
+      "effectiveness": "High"
+    },
+    {
+      "strategy": "Irrigation systems",
+      "purpose": "Drought mitigation",
+      "regions": ["Eastern Province", "Lowlands"],
+      "effectiveness": "High"
+    },
+    {
+      "strategy": "Early warning systems",
+      "purpose": "Flood and drought preparedness",
+      "regions": ["Nationwide"],
+      "effectiveness": "Medium to High"
+    },
+    {
+      "strategy": "Wetland conservation",
+      "purpose": "Natural flood control, water storage",
+      "regions": ["River basins", "Flood-prone areas"],
+      "effectiveness": "High"
+    },
+    {
+      "strategy": "Reforestation",
+      "purpose": "Climate regulation, erosion control",
+      "regions": ["All provinces"],
+      "effectiveness": "Medium to High"
+    }
+  ]
+}

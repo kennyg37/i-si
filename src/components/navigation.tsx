@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Map, BarChart3, Info, Home, Bot } from 'lucide-react';
+import { Map, BarChart3, Info, Home, Bot, Bell, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -12,7 +12,8 @@ const navigation = [
   { name: 'Map', href: '/map', icon: Map },
   { name: 'AI Chat', href: '/ai-chat', icon: Bot },
   { name: 'Insights', href: '/insights', icon: BarChart3 },
-  { name: 'About', href: '/about', icon: Info },
+  { name: 'Community', href: '/community', icon: Users },
+  { name: 'References', href: '/references', icon: Info },
 ];
 
 export function Navigation() {
@@ -53,6 +54,16 @@ export function Navigation() {
           </div>
           
           <div className="flex items-center space-x-2">
+            <Link href="/notifications">
+              <Button
+                variant={pathname === '/notifications' ? 'default' : 'outline'}
+                size="sm"
+                className="flex items-center space-x-2"
+              >
+                <Bell className="h-4 w-4" />
+                <span className="hidden sm:inline">Get Alerts</span>
+              </Button>
+            </Link>
             <ThemeToggle />
           </div>
         </div>

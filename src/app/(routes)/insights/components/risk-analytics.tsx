@@ -143,7 +143,7 @@ export function RiskAnalytics() {
 
     // Use API data for drought and flood risk
     const droughtRisk = droughtData?.droughtRisk || 0;
-    const floodRisk = floodData?.score || 0;
+    const floodRisk = floodData?.floodRisk?.score || 0;
 
     // Calculate vegetation risk (inverse of health)
     const vegetationRisk = 1 - (droughtData?.droughtRisk || 0.5); // Inverse relationship
@@ -185,7 +185,7 @@ export function RiskAnalytics() {
         },
         flood: {
           score: floodRisk,
-          level: floodData?.level || 'low',
+          level: floodData?.floodRisk?.level || 'low',
           trend: 'stable', // Would need historical data
           description: floodRisk > 0.7 ? 'High flood risk due to elevation and precipitation' :
                       floodRisk > 0.4 ? 'Moderate flood risk' :

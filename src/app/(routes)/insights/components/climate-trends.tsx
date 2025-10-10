@@ -7,7 +7,6 @@ import { CloudRain, Thermometer, Leaf, TrendingUp, AlertCircle } from 'lucide-re
 import { useRainfallData, useTemperatureData, useDroughtRisk } from '@/lib/hooks/use-climate-data';
 import { useClickedCoordinates } from '@/lib/store/map-store';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
 // Time range options

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { nasaPowerAPI } from '@/lib/api/nasa-power';
-import { format, subYears, subMonths, eachMonthOfInterval, startOfMonth, endOfMonth } from 'date-fns';
+import { format, subYears } from 'date-fns';
 
 /**
  * Extended historical data hook for deep analysis (up to 10 years)
@@ -140,7 +140,7 @@ export function useMonthlyAggregatedData(years: number = 3, lat: number = -1.940
       const monthlyData: MonthlyAggregatedData[] = [];
 
       monthlyMap.forEach((points, monthKey) => {
-        const [year, month] = monthKey.split('-').map(Number);
+        const [year] = monthKey.split('-').map(Number);
         const temps = points.map(p => p.temperature).filter((t): t is number => t !== undefined);
         const precips = points.map(p => p.precipitation).filter((p): p is number => p !== undefined);
         const humidities = points.map(p => p.humidity).filter((h): h is number => h !== undefined);

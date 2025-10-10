@@ -316,7 +316,7 @@ export function HistoricalDroughtAnalysis({ lat = -1.9403, lon = 29.8739 }: Hist
           </div>
           <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm font-medium text-blue-900">
-              📊 Average Monthly Deficit: {avgDeficit.toFixed(1)}mm
+              Average Monthly Deficit: {avgDeficit.toFixed(1)}mm
             </p>
             <p className="text-xs text-blue-700 mt-1">
               Persistent deficits indicate systematic rainfall shortages affecting water resources

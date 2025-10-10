@@ -1,0 +1,249 @@
+{
+  "country": "Rwanda",
+  "defaultCenter": {
+    "lat": -1.9403,
+    "lon": 29.8739,
+    "name": "Rwanda Center"
+  },
+  "bounds": {
+    "north": -1.0,
+    "south": -2.8,
+    "east": 31.0,
+    "west": 28.8
+  },
+  "provinces": [
+    {
+      "name": "Kigali City",
+      "coordinates": { "lat": -1.9536, "lon": 30.0606 },
+      "population": 1132686,
+      "districts": ["Gasabo", "Kicukiro", "Nyarugenge"],
+      "climateZone": "tropical highland",
+      "elevation": "1567m",
+      "description": "Capital and largest city of Rwanda"
+    },
+    {
+      "name": "Northern Province",
+      "coordinates": { "lat": -1.5, "lon": 29.8 },
+      "population": 1726370,
+      "districts": ["Burera", "Gakenke", "Gicumbi", "Musanze", "Rulindo"],
+      "climateZone": "tropical highland",
+      "elevation": "1800-4507m",
+      "description": "Mountainous region with volcanic landscapes"
+    },
+    {
+      "name": "Southern Province",
+      "coordinates": { "lat": -2.5, "lon": 29.7 },
+      "population": 2589975,
+      "districts": ["Gisagara", "Huye", "Kamonyi", "Muhanga", "Nyamagabe", "Nyanza", "Nyaruguru", "Ruhango"],
+      "climateZone": "tropical highland",
+      "elevation": "1200-2500m",
+      "description": "Agricultural heartland with varied terrain"
+    },
+    {
+      "name": "Eastern Province",
+      "coordinates": { "lat": -1.8, "lon": 30.5 },
+      "population": 2595703,
+      "districts": ["Bugesera", "Gatsibo", "Kayonza", "Kirehe", "Ngoma", "Nyagatare", "Rwamagana"],
+      "climateZone": "tropical lowland",
+      "elevation": "1000-1500m",
+      "description": "Lower elevation region with savannas"
+    },
+    {
+      "name": "Western Province",
+      "coordinates": { "lat": -2.0, "lon": 29.2 },
+      "population": 2471239,
+      "districts": ["Karongi", "Ngororero", "Nyabihu", "Nyamasheke", "Rubavu", "Rusizi", "Rutsiro"],
+      "climateZone": "tropical highland",
+      "elevation": "1000-2500m",
+      "description": "Region along Lake Kivu with diverse landscapes"
+    }
+  ],
+  "cities": [
+    {
+      "name": "Kigali",
+      "lat": -1.9536,
+      "lon": 30.0606,
+      "population": 1132686,
+      "province": "Kigali City",
+      "elevation": 1567,
+      "description": "Capital and economic center",
+      "aliases": ["Kigali City", "Capital"]
+    },
+    {
+      "name": "Butare",
+      "lat": -2.5967,
+      "lon": 29.7392,
+      "population": 89600,
+      "province": "Southern Province",
+      "elevation": 1768,
+      "description": "Historic university town",
+      "aliases": ["Huye", "Butare City"]
+    },
+    {
+      "name": "Gisenyi",
+      "lat": -1.7039,
+      "lon": 29.2567,
+      "population": 83623,
+      "province": "Western Province",
+      "elevation": 1486,
+      "description": "Beach resort town on Lake Kivu",
+      "aliases": ["Rubavu"]
+    },
+    {
+      "name": "Ruhengeri",
+      "lat": -1.4993,
+      "lon": 29.6333,
+      "population": 86685,
+      "province": "Northern Province",
+      "elevation": 1850,
+      "description": "Gateway to Volcanoes National Park",
+      "aliases": ["Musanze"]
+    },
+    {
+      "name": "Gitarama",
+      "lat": -2.0744,
+      "lon": 29.7564,
+      "population": 87613,
+      "province": "Southern Province",
+      "elevation": 1850,
+      "description": "Agricultural trading center",
+      "aliases": ["Muhanga"]
+    },
+    {
+      "name": "Byumba",
+      "lat": -1.5764,
+      "lon": 30.0672,
+      "population": 70593,
+      "province": "Northern Province",
+      "elevation": 1904,
+      "description": "Important trading town",
+      "aliases": ["Gicumbi"]
+    },
+    {
+      "name": "Cyangugu",
+      "lat": -2.4846,
+      "lon": 28.9075,
+      "population": 63883,
+      "province": "Western Province",
+      "elevation": 1550,
+      "description": "Port town on Lake Kivu",
+      "aliases": ["Rusizi"]
+    },
+    {
+      "name": "Kibungo",
+      "lat": -2.1594,
+      "lon": 30.5425,
+      "population": 46240,
+      "province": "Eastern Province",
+      "elevation": 1394,
+      "description": "Commercial center in the east",
+      "aliases": ["Ngoma"]
+    },
+    {
+      "name": "Rwamagana",
+      "lat": -1.9486,
+      "lon": 30.4347,
+      "population": 47203,
+      "province": "Eastern Province",
+      "elevation": 1550,
+      "description": "Growing urban center"
+    },
+    {
+      "name": "Nyagatare",
+      "lat": -1.2964,
+      "lon": 30.3314,
+      "population": 43826,
+      "province": "Eastern Province",
+      "elevation": 1360,
+      "description": "Agricultural hub in the northeast"
+    }
+  ],
+  "regions": {
+    "northern": {
+      "name": "Northern Rwanda",
+      "center": { "lat": -1.5, "lon": 29.8 },
+      "bounds": { "north": -1.0, "south": -1.8, "east": 30.5, "west": 29.0 },
+      "elevation": "high",
+      "description": "Volcanic highlands including Mt. Karisimbi",
+      "characteristics": ["mountainous", "volcanic", "cooler temperatures", "high rainfall"]
+    },
+    "southern": {
+      "name": "Southern Rwanda",
+      "center": { "lat": -2.5, "lon": 29.7 },
+      "bounds": { "north": -2.0, "south": -2.8, "east": 30.5, "west": 29.0 },
+      "elevation": "varied",
+      "description": "Rolling hills and agricultural lands",
+      "characteristics": ["agricultural", "varied elevation", "moderate rainfall", "densely populated"]
+    },
+    "eastern": {
+      "name": "Eastern Rwanda",
+      "center": { "lat": -1.8, "lon": 30.5 },
+      "bounds": { "north": -1.0, "south": -2.5, "east": 31.0, "west": 30.0 },
+      "elevation": "low",
+      "description": "Lower elevation plains and savannas",
+      "characteristics": ["lower elevation", "warmer", "drier", "savanna", "prone to drought"]
+    },
+    "western": {
+      "name": "Western Rwanda",
+      "center": { "lat": -2.0, "lon": 29.2 },
+      "bounds": { "north": -1.5, "south": -2.8, "east": 29.5, "west": 28.8 },
+      "elevation": "high",
+      "description": "Lake Kivu shoreline and mountains",
+      "characteristics": ["lakeside", "mountainous", "high rainfall", "cooler", "tea plantations"]
+    },
+    "central": {
+      "name": "Central Rwanda",
+      "center": { "lat": -1.9403, "lon": 29.8739 },
+      "bounds": { "north": -1.5, "south": -2.3, "east": 30.5, "west": 29.5 },
+      "elevation": "moderate",
+      "description": "Central highlands around Kigali",
+      "characteristics": ["urban center", "moderate elevation", "dense population", "commercial hub"]
+    }
+  },
+  "landmarks": [
+    {
+      "name": "Lake Kivu",
+      "type": "lake",
+      "coordinates": { "lat": -2.0, "lon": 29.0 },
+      "description": "One of Africa's Great Lakes, shared with DRC"
+    },
+    {
+      "name": "Volcanoes National Park",
+      "type": "park",
+      "coordinates": { "lat": -1.4667, "lon": 29.4833 },
+      "description": "Home to mountain gorillas"
+    },
+    {
+      "name": "Nyungwe Forest",
+      "type": "forest",
+      "coordinates": { "lat": -2.4833, "lon": 29.1667 },
+      "description": "Largest montane forest in East Africa"
+    },
+    {
+      "name": "Akagera National Park",
+      "type": "park",
+      "coordinates": { "lat": -1.75, "lon": 30.75 },
+      "description": "Savanna wildlife park in the east"
+    }
+  ],
+  "waterways": [
+    {
+      "name": "Nyabarongo River",
+      "type": "river",
+      "description": "Major river, prone to flooding",
+      "floodRisk": "high"
+    },
+    {
+      "name": "Akagera River",
+      "type": "river",
+      "description": "Forms eastern border with Tanzania",
+      "floodRisk": "moderate"
+    },
+    {
+      "name": "Rusizi River",
+      "type": "river",
+      "description": "Flows from Lake Kivu to Lake Tanganyika",
+      "floodRisk": "moderate"
+    }
+  ]
+}

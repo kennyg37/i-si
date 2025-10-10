@@ -314,7 +314,6 @@ export async function fetchClimateIndices(
   lon: number,
   startDate: string,
   endDate: string,
-  indices: ('spi' | 'spei' | 'pdsi' | 'heat' | 'windchill')[] = ['spi', 'spei']
 ): Promise<ClimateIndicesResponse> {
   try {
     console.log('[Climate Indices] Fetching REAL data from NASA POWER...');
@@ -430,7 +429,6 @@ export async function fetchClimateIndices(
     }
 
     // Wind chill (less relevant for Rwanda's tropical climate, but included for completeness)
-    const hourlyWind = climateData.hourly?.wind_speed_10m || [];
     const windChillData: WindChillData[] = [];
 
     const response: ClimateIndicesResponse = {

@@ -29,7 +29,6 @@
 
 import { nasaPowerAPI } from '../api/nasa-power';
 import { openTopographyAPI } from '../api/opentopography';
-import { sentinelHubAPI } from '../api/sentinel-hub';
 import { gfmsAPI } from '../api/gfms';
 
 export interface FloodPredictionInput {
@@ -84,7 +83,7 @@ export interface FloodPredictionResult {
 export async function calculateFloodPrediction(
   input: FloodPredictionInput
 ): Promise<FloodPredictionResult> {
-  const { latitude, longitude, predictionDays = 7 } = input;
+  const { latitude, longitude } = input;
 
   console.log(`[FloodPrediction] Calculating for: ${latitude}, ${longitude}`);
 
@@ -99,7 +98,7 @@ export async function calculateFloodPrediction(
     fetchRainfallData(latitude, longitude, startDate7, endDate),
     fetchRainfallData(latitude, longitude, startDate90, startDate30),
     fetchTerrainData(latitude, longitude),
-    fetchNDVIData(latitude, longitude),
+    fetchNDVIData(),
     fetchHistoricalFloods(latitude, longitude, startDate90, endDate)
   ]);
 
@@ -213,7 +212,7 @@ async function fetchTerrainData(lat: number, lon: number) {
  * Fetch NDVI data from Sentinel Hub API
  * Disabled temporarily due to Sentinel Hub configuration issues
  */
-async function fetchNDVIData(lat: number, lon: number) {
+async function fetchNDVIData() {
   // Return null to skip NDVI data fetching
   // Re-enable when Sentinel Hub credentials are configured
   return null;

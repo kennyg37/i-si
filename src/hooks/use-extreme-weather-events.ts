@@ -6,7 +6,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchExtremeWeatherEvents } from '@/lib/api/extreme-weather';
+import { fetchExtremeWeatherEvents, type ExtremeWeatherResponse } from '@/lib/api/extreme-weather';
 import { extremeEventsCache, generateCacheKey } from '@/lib/db/cache-service';
 
 interface UseExtremeWeatherEventsOptions {
@@ -24,12 +24,12 @@ export function useExtremeWeatherEvents({
   endDate,
   enabled = true,
 }: UseExtremeWeatherEventsOptions) {
-  return useQuery({
+  return useQuery<ExtremeWeatherResponse>({
     queryKey: ['extreme-weather-events', lat, lon, startDate, endDate],
     queryFn: async () => {
       // Try to get from cache first
       const cacheKey = generateCacheKey('extreme-events', { lat, lon, startDate, endDate });
-      const cached = await extremeEventsCache.get(cacheKey);
+      const cached = await extremeEventsCache.get<ExtremeWeatherResponse>(cacheKey);
 
       if (cached) {
         console.log('[useExtremeWeatherEvents] Cache hit');
@@ -41,7 +41,7 @@ export function useExtremeWeatherEvents({
       const data = await fetchExtremeWeatherEvents(lat, lon, startDate, endDate);
 
       // Cache the result
-      await extremeEventsCache.set(cacheKey, data);
+      await extremeEventsCache.set<ExtremeWeatherResponse>(cacheKey, data);
 
       return data;
     },

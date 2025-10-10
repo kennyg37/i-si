@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertTriangle, TrendingUp, TrendingDown, Minus, MapPin } from 'lucide-react';
-import { useClickedCoordinates, useSelectedLocation } from '@/lib/store/map-store';
+import { useClickedCoordinates } from '@/lib/store/map-store';
 import { CoordinateDisplay } from '@/components/coordinate-display';
 import { useLocationAnalytics } from '@/hooks/use-location-analytics';
 import type { RiskLevel } from '@/types';
@@ -78,7 +78,6 @@ const getTrendIcon = (trend: string) => {
 
 export function RiskSummary() {
   const clickedCoordinates = useClickedCoordinates();
-  const selectedLocation = useSelectedLocation();
 
   // Fetch real analytics data for clicked location
   const { data: analytics, isLoading, error } = useLocationAnalytics(

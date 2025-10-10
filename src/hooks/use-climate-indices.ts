@@ -8,14 +8,8 @@ import {
   ClimateIndicesResponse, 
   SPIData, 
   SPEIData, 
-  PDSIData, 
   HeatIndexData, 
-  WindChillData,
-  calculateSPI,
-  calculateSPEI,
-  calculateHeatIndex,
-  calculateWindChill,
-  calculatePDSI
+  WindChillData
 } from '@/lib/api/climate-indices';
 
 export interface UseClimateIndicesOptions {
@@ -53,7 +47,7 @@ export function useClimateIndices({
     setError(null);
 
     try {
-      const result = await fetchClimateIndices(lat, lon, startDate, endDate, indices);
+      const result = await fetchClimateIndices(lat, lon, startDate, endDate);
       setData(result);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch climate indices'));
@@ -115,7 +109,7 @@ export function useSPIData({
     setError(null);
 
     try {
-      const result = await fetchClimateIndices(lat, lon, startDate, endDate, ['spi']);
+      const result = await fetchClimateIndices(lat, lon, startDate, endDate);
       setData(result.spi);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch SPI data'));
@@ -231,7 +225,7 @@ export function useSPEIData({
     setError(null);
 
     try {
-      const result = await fetchClimateIndices(lat, lon, startDate, endDate, ['spei']);
+      const result = await fetchClimateIndices(lat, lon, startDate, endDate);
       setData(result.spei);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch SPEI data'));
@@ -339,7 +333,7 @@ export function useHeatIndex({
     setError(null);
 
     try {
-      const result = await fetchClimateIndices(lat, lon, startDate, endDate, ['heat']);
+      const result = await fetchClimateIndices(lat, lon, startDate, endDate);
       setData(result.heatIndex);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch heat index data'));
@@ -464,7 +458,7 @@ export function useWindChill({
     setError(null);
 
     try {
-      const result = await fetchClimateIndices(lat, lon, startDate, endDate, ['windchill']);
+      const result = await fetchClimateIndices(lat, lon, startDate, endDate);
       setData(result.windChill);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch wind chill data'));

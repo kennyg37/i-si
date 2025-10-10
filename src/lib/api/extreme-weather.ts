@@ -4,6 +4,18 @@
  */
 
 export interface ExtremeWeatherEvent {
+  precipitationDeficit?: number;
+  precipitationTotal?: number;
+  peakIntensity?: number;
+  returnPeriod?: number;
+  maxWindSpeed?: number;
+  averageWindSpeed?: number;
+  category?: string;
+  averageTemperature?: number;
+  maxTemperature?: number;
+  heatIndex?: number;
+  soilMoistureDeficit?: number;
+  vegetationStress?: number;
   id: string;
   type: 'heat_wave' | 'cold_wave' | 'drought' | 'flood' | 'storm' | 'wind' | 'precipitation';
   severity: 'low' | 'moderate' | 'high' | 'extreme';
@@ -147,7 +159,12 @@ export function detectHeatWave(
         currentEvent.averageTemperature = ((currentEvent.averageTemperature || 0) * (currentEvent.consecutiveDays - 1) + temp.value) / currentEvent.consecutiveDays;
       }
     } else {
-      if (currentEvent && currentEvent.consecutiveDays >= minDuration) {
+      if (
+        currentEvent &&
+        typeof currentEvent.consecutiveDays === 'number' &&
+        currentEvent.consecutiveDays >= minDuration &&
+        typeof currentEvent.averageTemperature === 'number'
+      ) {
         currentEvent.endDate = temperatures[i - 1].date;
         currentEvent.duration = currentEvent.consecutiveDays;
         currentEvent.intensity = Math.min(1, (currentEvent.averageTemperature - threshold) / 10);
@@ -195,18 +212,18 @@ export function detectDrought(
           impacts: { agricultural: 0, infrastructure: 0, health: 0, economic: 0 },
           thresholds: []
         };
-      } else {
-        currentEvent.precipitationDeficit += threshold - precip.value;
-        currentEvent.soilMoistureDeficit = Math.max(currentEvent.soilMoistureDeficit || 0, 1 - soil.value);
-        currentEvent.vegetationStress = Math.max(currentEvent.vegetationStress || 0, 1 - soil.value);
+      } else if (currentEvent) {
+        currentEvent.precipitationDeficit = (currentEvent.precipitationDeficit || 0) + (threshold - precip.value);
+        currentEvent.soilMoistureDeficit = Math.max(currentEvent.soilMoistureDeficit ?? 0, 1 - soil.value);
+        currentEvent.vegetationStress = Math.max(currentEvent.vegetationStress ?? 0, 1 - soil.value);
       }
     } else {
-      if (currentEvent && currentEvent.precipitationDeficit > 10) { // 10mm deficit threshold
+      if (currentEvent && (currentEvent.precipitationDeficit || 0) > 10) { // 10mm deficit threshold
         currentEvent.endDate = precipitation[i - 1].date;
-        currentEvent.duration = Math.ceil(currentEvent.precipitationDeficit / 5); // Rough estimate
-        currentEvent.intensity = Math.min(1, currentEvent.precipitationDeficit / 50);
+        currentEvent.duration = Math.ceil((currentEvent.precipitationDeficit || 0) / 5); // Rough estimate
+        currentEvent.intensity = Math.min(1, (currentEvent.precipitationDeficit || 0) / 50);
         currentEvent.severity = getSeverity(currentEvent.intensity);
-        currentEvent.description = `Drought with ${currentEvent.precipitationDeficit.toFixed(1)}mm precipitation deficit`;
+        currentEvent.description = `Drought with ${(currentEvent.precipitationDeficit || 0).toFixed(1)}mm precipitation deficit`;
         
         events.push(currentEvent as DroughtEvent);
       }
@@ -222,7 +239,6 @@ export function detectDrought(
  */
 export function detectFlood(
   precipitation: { date: string; value: number }[],
-  intensityThreshold: number = 20, // mm/hour
   totalThreshold: number = 50 // mm/day
 ): FloodEvent[] {
   const events: FloodEvent[] = [];
@@ -250,17 +266,17 @@ export function detectFlood(
           thresholds: []
         };
       } else {
-        currentEvent.precipitationTotal += precip.value;
+        currentEvent.precipitationTotal = (currentEvent.precipitationTotal || 0) + precip.value;
         currentEvent.peakIntensity = Math.max(currentEvent.peakIntensity || 0, precip.value);
         currentEvent.duration = (currentEvent.duration || 0) + 1;
       }
     } else {
-      if (currentEvent && currentEvent.precipitationTotal > 100) { // 100mm total threshold
+      if (currentEvent && (currentEvent.precipitationTotal || 0) > 100) { // 100mm total threshold
         currentEvent.endDate = precipitation[i - 1].date;
-        currentEvent.intensity = Math.min(1, currentEvent.precipitationTotal / 200);
+        currentEvent.intensity = Math.min(1, (currentEvent.precipitationTotal || 0) / 200);
         currentEvent.severity = getSeverity(currentEvent.intensity);
-        currentEvent.returnPeriod = calculateReturnPeriod(currentEvent.precipitationTotal);
-        currentEvent.description = `Flood event with ${currentEvent.precipitationTotal.toFixed(1)}mm total precipitation`;
+        currentEvent.returnPeriod = calculateReturnPeriod(currentEvent.precipitationTotal || 0);
+        currentEvent.description = `Flood event with ${(currentEvent.precipitationTotal || 0).toFixed(1)}mm total precipitation`;
         
         events.push(currentEvent as FloodEvent);
       }
@@ -275,8 +291,7 @@ export function detectFlood(
  * Generate weather alerts based on current conditions
  */
 export function generateWeatherAlerts(
-  currentConditions: any,
-  forecasts: any[]
+  currentConditions: any
 ): WeatherAlert[] {
   const alerts: WeatherAlert[] = [];
 
@@ -413,7 +428,7 @@ export async function fetchExtremeWeatherEvents(
 
     // Generate real-time weather alerts based on current conditions
     const currentWeather = await getCurrentWeather(lat, lon);
-    const alerts = generateWeatherAlerts(currentWeather, allEvents);
+    const alerts = generateWeatherAlerts(currentWeather);
 
     const response: ExtremeWeatherResponse = {
       coordinates: { lat, lon },

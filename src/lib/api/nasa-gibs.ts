@@ -77,23 +77,23 @@ export const GIBS_LAYERS = {
 
   // 🌱 Soil Moisture Layers
   // SMAP provides surface and root zone soil moisture (daily and 3-hourly)
-  soil_moisture: 'SMAP_L3_Soil_Moisture', // Valid GIBS layer
-  soil_moisture_anomaly: 'SMAP_L3_Soil_Moisture_Anomaly', // Valid anomaly layer
+  soil_moisture: 'SMAP_L3_Active_Soil_Moisture', // Valid GIBS layer
+  soil_moisture_anomaly: 'SMAP_L4_Analyzed_Surface_Soil_Moisture', // Valid anomaly layer
 
   // 🌧️ Rainfall and Precipitation
-  rainfall_anomaly: 'GPM_3IMERGDL_Precipitation_Rate', // Monthly anomaly-like use
-  precipitation: 'GPM_3IMERGDF_Precipitation_Rate', // Daily precipitation rate
+  rainfall_anomaly: 'GLDAS_Surface_Total_Precipitation_Rate_Monthly', // Monthly anomaly-like use
+  precipitation: 'MERRA2_Precipitation_Bias_Corrected_Monthly', // Daily precipitation rate
 
   // 🌡️ Land Surface Temperature
-  land_temp_modis: 'MODIS_Terra_Land_Surface_Temp_Day',
-  land_temp_viirs: 'VIIRS_NOAA20_Land_Surface_Temp_Day',
+  land_temp_modis: 'MODIS_Terra_L3_Land_Surface_Temp_8Day_Day_TES',
+  land_temp_viirs: 'VIIRS_SNPP_Land_Surface_Temp_Day',
 
   // 🌿 Drought and Vegetation
-  ndvi_modis: 'MODIS_Terra_NDVI_8Day',
-  evi_modis: 'MODIS_Terra_EVI_8Day',
+  ndvi_modis: 'MODIS_Terra_L3_NDVI_Monthly',
+  evi_modis: 'MODIS_Terra_L3_EVI_Monthly',
 
   // 💧 Water and Hydrology
-  water_mask_modis: 'MODIS_Terra_Water_Mask',
+  water_mask_modis: 'MODIS_Terra_L3_Land_Water_Mask',
   snow_cover: 'MODIS_Terra_Snow_Cover_Daily_Tile', // daily, most common one
 
   fire_modis: 'VIIRS_SNPP_Thermal_Anomalies_375m_All',
@@ -101,7 +101,7 @@ export const GIBS_LAYERS = {
 
   // 🌫️ Aerosols and Air Quality
   aerosol_modis: 'MODIS_Terra_Aerosol', // Common MODIS AOD layer
-  dust_modis: 'MODIS_Combined_Aerosol_Optical_Depth_Land_Ocean_Mean' // Most used dust proxy layer
+  dust_modis: 'MODIS_Combined_MAIAC_L2G_AerosolOpticalDepth' // Most used dust proxy layer
 } as const;
 
 

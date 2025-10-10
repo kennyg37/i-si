@@ -198,7 +198,7 @@ export function HistoricalMode({ lat = -1.9403, lon = 29.8739, locationName = 'K
                   {/* Key Features */}
                   <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200">
                     <CardHeader>
-                      <CardTitle className="text-indigo-900">What You'll Discover</CardTitle>
+                      <CardTitle className="text-indigo-900">What You will Discover</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="grid md:grid-cols-2 gap-6">
