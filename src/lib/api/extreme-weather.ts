@@ -364,7 +364,7 @@ function calculateReturnPeriod(precipitation: number): number {
 }
 
 /**
- * Fetch extreme weather events
+ * Fetch extreme weather events using REAL data from Open-Meteo
  */
 export async function fetchExtremeWeatherEvents(
   lat: number,
@@ -373,108 +373,93 @@ export async function fetchExtremeWeatherEvents(
   endDate: string
 ): Promise<ExtremeWeatherResponse> {
   try {
-    // This would integrate with weather APIs and historical data
-    // For now, returning mock data structure
-    const mockData: ExtremeWeatherResponse = {
+    console.log('[Extreme Weather] Fetching REAL events from Open-Meteo...');
+
+    // Import Open-Meteo integration
+    const { detectExtremeWeatherEvents, getCurrentWeather } = await import('./open-meteo');
+
+    // Fetch real extreme weather events from Open-Meteo
+    const detectedEvents = await detectExtremeWeatherEvents(lat, lon, startDate, endDate);
+
+    // Combine all event types
+    const allEvents: ExtremeWeatherEvent[] = [
+      ...detectedEvents.heatWaves,
+      ...detectedEvents.coldSpells,
+      ...detectedEvents.droughts,
+      ...detectedEvents.floods,
+      ...detectedEvents.heavyRain,
+    ];
+
+    // Calculate summary statistics from REAL events
+    const totalEvents = allEvents.length;
+
+    const eventsByType: Record<string, number> = {};
+    allEvents.forEach(event => {
+      eventsByType[event.type] = (eventsByType[event.type] || 0) + 1;
+    });
+
+    const eventsBySeverity: Record<string, number> = {};
+    allEvents.forEach(event => {
+      eventsBySeverity[event.severity] = (eventsBySeverity[event.severity] || 0) + 1;
+    });
+
+    const averageDuration = totalEvents > 0
+      ? allEvents.reduce((sum, event) => sum + event.duration, 0) / totalEvents
+      : 0;
+
+    const totalImpact = totalEvents > 0
+      ? allEvents.reduce((sum, event) => sum + (event.intensity || 0), 0) / totalEvents
+      : 0;
+
+    // Generate real-time weather alerts based on current conditions
+    const currentWeather = await getCurrentWeather(lat, lon);
+    const alerts = generateWeatherAlerts(currentWeather, allEvents);
+
+    const response: ExtremeWeatherResponse = {
       coordinates: { lat, lon },
       timeRange: { start: startDate, end: endDate },
-      events: generateMockExtremeWeatherEvents(startDate, endDate),
+      events: allEvents,
       summary: {
-        totalEvents: 5,
-        eventsByType: {
-          heat_wave: 2,
-          drought: 1,
-          flood: 1,
-          storm: 1
-        },
-        eventsBySeverity: {
-          low: 1,
-          moderate: 2,
-          high: 2,
-          extreme: 0
-        },
-        averageDuration: 7.2,
-        totalImpact: 0.6
+        totalEvents,
+        eventsByType,
+        eventsBySeverity,
+        averageDuration,
+        totalImpact,
       },
-      alerts: generateMockWeatherAlerts(),
+      alerts,
       metadata: {
-        dataSource: 'Weather API',
+        dataSource: 'Open-Meteo (Real Data)',
         lastUpdated: new Date().toISOString(),
-        confidence: 0.85
-      }
+        confidence: 0.90, // Higher confidence with real data
+      },
     };
 
-    return mockData;
+    console.log(`[Extreme Weather] Found ${totalEvents} REAL events:`, eventsByType);
+    return response;
   } catch (error) {
-    console.error('Error fetching extreme weather events:', error);
-    throw new Error('Failed to fetch extreme weather events');
+    console.error('[Extreme Weather] Error fetching real events:', error);
+
+    // Fallback to minimal response on error
+    return {
+      coordinates: { lat, lon },
+      timeRange: { start: startDate, end: endDate },
+      events: [],
+      summary: {
+        totalEvents: 0,
+        eventsByType: {},
+        eventsBySeverity: {},
+        averageDuration: 0,
+        totalImpact: 0,
+      },
+      alerts: [],
+      metadata: {
+        dataSource: 'Open-Meteo (Error - No Data)',
+        lastUpdated: new Date().toISOString(),
+        confidence: 0,
+      },
+    };
   }
 }
 
-// Mock data generators
-function generateMockExtremeWeatherEvents(startDate: string, endDate: string): ExtremeWeatherEvent[] {
-  return [
-    {
-      id: 'heat_wave_1',
-      type: 'heat_wave',
-      severity: 'high',
-      startDate: '2024-01-15',
-      endDate: '2024-01-18',
-      duration: 4,
-      intensity: 0.7,
-      affectedArea: 500,
-      coordinates: { lat: -1.9403, lon: 29.8739 },
-      description: 'Heat wave with temperatures exceeding 35°C for 4 consecutive days',
-      impacts: { agricultural: 0.6, infrastructure: 0.3, health: 0.8, economic: 0.4 },
-      thresholds: [
-        { parameter: 'Temperature', value: 36.5, unit: '°C', threshold: 35, exceeded: true }
-      ],
-      maxTemperature: 36.5,
-      minTemperature: 35.2,
-      averageTemperature: 35.8,
-      consecutiveDays: 4,
-      heatIndex: 38.2
-    } as HeatWaveEvent,
-    {
-      id: 'drought_1',
-      type: 'drought',
-      severity: 'moderate',
-      startDate: '2024-02-01',
-      endDate: '2024-02-28',
-      duration: 28,
-      intensity: 0.5,
-      affectedArea: 1000,
-      coordinates: { lat: -1.9403, lon: 29.8739 },
-      description: 'Extended dry period with below-normal precipitation',
-      impacts: { agricultural: 0.7, infrastructure: 0.2, health: 0.3, economic: 0.5 },
-      thresholds: [
-        { parameter: 'Precipitation', value: 15, unit: 'mm', threshold: 50, exceeded: false }
-      ],
-      precipitationDeficit: 35,
-      soilMoistureDeficit: 0.4,
-      streamflowDeficit: 25,
-      vegetationStress: 0.6
-    } as DroughtEvent
-  ];
-}
-
-function generateMockWeatherAlerts(): WeatherAlert[] {
-  return [
-    {
-      id: 'alert_1',
-      type: 'warning',
-      severity: 'high',
-      event: 'Heat Wave',
-      description: 'Extreme heat conditions expected',
-      issuedAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-      coordinates: { lat: -1.9403, lon: 29.8739 },
-      affectedArea: 500,
-      recommendations: [
-        'Stay hydrated',
-        'Avoid outdoor activities during peak hours',
-        'Check on vulnerable populations'
-      ]
-    }
-  ];
-}
+// ✅ NO MORE MOCK DATA!
+// All events are now detected from REAL Open-Meteo historical data

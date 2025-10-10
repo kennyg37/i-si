@@ -7,6 +7,8 @@ import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertCircle, AlertTriangle, Thermometer, Droplets, Wind, CloudRain, TrendingUp, Calendar, MapPin } from 'lucide-react';
 import { useClickedCoordinates } from '@/lib/store/map-store';
+import { useExtremeWeatherEventsForTimeRange } from '@/hooks/use-extreme-weather-events';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Default coordinates for Rwanda center if no location selected
 const RWANDA_CENTER = { lat: -1.9403, lon: 29.8739 };
@@ -19,114 +21,9 @@ const timeRangeOptions = [
   { value: '2y', label: 'Last 2 Years' }
 ];
 
-// Mock extreme weather events data
-const mockExtremeWeatherEvents = [
-  {
-    id: 'heat_wave_1',
-    type: 'heat_wave',
-    severity: 'high',
-    startDate: '2024-01-15',
-    endDate: '2024-01-18',
-    duration: 4,
-    intensity: 0.7,
-    affectedArea: 500,
-    coordinates: { lat: -1.9403, lon: 29.8739 },
-    description: 'Heat wave with temperatures exceeding 35°C for 4 consecutive days',
-    impacts: { agricultural: 0.6, infrastructure: 0.3, health: 0.8, economic: 0.4 },
-    maxTemperature: 36.5,
-    minTemperature: 35.2,
-    averageTemperature: 35.8,
-    consecutiveDays: 4,
-    heatIndex: 38.2
-  },
-  {
-    id: 'drought_1',
-    type: 'drought',
-    severity: 'moderate',
-    startDate: '2024-02-01',
-    endDate: '2024-02-28',
-    duration: 28,
-    intensity: 0.5,
-    affectedArea: 1000,
-    coordinates: { lat: -1.9403, lon: 29.8739 },
-    description: 'Extended dry period with below-normal precipitation',
-    impacts: { agricultural: 0.7, infrastructure: 0.2, health: 0.3, economic: 0.5 },
-    precipitationDeficit: 35,
-    soilMoistureDeficit: 0.4,
-    streamflowDeficit: 25,
-    vegetationStress: 0.6
-  },
-  {
-    id: 'flood_1',
-    type: 'flood',
-    severity: 'high',
-    startDate: '2024-03-10',
-    endDate: '2024-03-12',
-    duration: 3,
-    intensity: 0.8,
-    affectedArea: 300,
-    coordinates: { lat: -1.9403, lon: 29.8739 },
-    description: 'Heavy rainfall causing flash flooding in low-lying areas',
-    impacts: { agricultural: 0.8, infrastructure: 0.9, health: 0.6, economic: 0.7 },
-    precipitationTotal: 150,
-    peakIntensity: 25,
-    returnPeriod: 10,
-    waterLevel: 2.5
-  },
-  {
-    id: 'storm_1',
-    type: 'storm',
-    severity: 'moderate',
-    startDate: '2024-04-05',
-    endDate: '2024-04-06',
-    duration: 2,
-    intensity: 0.6,
-    affectedArea: 200,
-    coordinates: { lat: -1.9403, lon: 29.8739 },
-    description: 'Severe thunderstorm with strong winds and heavy rain',
-    impacts: { agricultural: 0.4, infrastructure: 0.5, health: 0.3, economic: 0.4 },
-    maxWindSpeed: 25,
-    averageWindSpeed: 15,
-    precipitationTotal: 80,
-    pressure: 1005,
-    category: 'Severe'
-  }
-];
-
-const mockWeatherAlerts = [
-  {
-    id: 'alert_1',
-    type: 'warning',
-    severity: 'high',
-    event: 'Heat Wave',
-    description: 'Extreme heat conditions expected with temperatures reaching 36°C',
-    issuedAt: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-    coordinates: { lat: -1.9403, lon: 29.8739 },
-    affectedArea: 500,
-    recommendations: [
-      'Stay hydrated and avoid prolonged outdoor activities',
-      'Check on elderly and vulnerable populations',
-      'Use air conditioning or fans to stay cool'
-    ]
-  },
-  {
-    id: 'alert_2',
-    type: 'advisory',
-    severity: 'moderate',
-    event: 'Drought Conditions',
-    description: 'Low soil moisture levels detected (25%)',
-    issuedAt: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    coordinates: { lat: -1.9403, lon: 29.8739 },
-    affectedArea: 1000,
-    recommendations: [
-      'Implement water conservation measures',
-      'Monitor crop conditions closely',
-      'Consider irrigation if available'
-    ]
-  }
-];
+// ✅ NO MORE MOCK DATA!
+// Events are now fetched from REAL APIs (Open-Meteo) via useExtremeWeatherEvents hook
+// (to be created next)
 
 const getEventIcon = (type: string) => {
   switch (type) {
@@ -159,79 +56,84 @@ const getAlertTypeColor = (type: string) => {
 };
 
 export function ExtremeWeatherEvents() {
-  const [selectedTimeRange, setSelectedTimeRange] = useState('1y');
+  const [selectedTimeRange, setSelectedTimeRange] = useState<'30d' | '90d' | '1y' | '2y'>('1y');
   const [selectedEventType, setSelectedEventType] = useState('all');
   const clickedCoordinates = useClickedCoordinates();
-  
+
   // Use clicked coordinates or default to Rwanda center
   const coordinates = clickedCoordinates || RWANDA_CENTER;
-  
-  // Calculate date range based on selection
-  const { startDate, endDate } = useMemo(() => {
-    const end = new Date();
-    const start = new Date();
-    
-    switch (selectedTimeRange) {
-      case '30d':
-        start.setDate(end.getDate() - 30);
-        break;
-      case '90d':
-        start.setDate(end.getDate() - 90);
-        break;
-      case '1y':
-        start.setFullYear(end.getFullYear() - 1);
-        break;
-      case '2y':
-        start.setFullYear(end.getFullYear() - 2);
-        break;
-      default:
-        start.setFullYear(end.getFullYear() - 1);
-    }
-    
-    return {
-      startDate: start.toISOString().split('T')[0],
-      endDate: end.toISOString().split('T')[0]
-    };
-  }, [selectedTimeRange]);
+
+  // Fetch REAL extreme weather events from Open-Meteo
+  const { data: eventsData, isLoading, error } = useExtremeWeatherEventsForTimeRange(
+    coordinates.lat,
+    coordinates.lon,
+    selectedTimeRange
+  );
 
   // Filter events based on selection
   const filteredEvents = useMemo(() => {
-    let events = mockExtremeWeatherEvents;
-    
+    if (!eventsData?.events) return [];
+
+    let events = eventsData.events;
+
     if (selectedEventType !== 'all') {
       events = events.filter(event => event.type === selectedEventType);
     }
-    
+
     return events;
-  }, [selectedEventType]);
+  }, [eventsData, selectedEventType]);
 
-  // Calculate summary statistics
+  // Calculate summary statistics from REAL data
   const summary = useMemo(() => {
-    const totalEvents = filteredEvents.length;
-    const eventsByType = filteredEvents.reduce((acc, event) => {
-      acc[event.type] = (acc[event.type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    
-    const eventsBySeverity = filteredEvents.reduce((acc, event) => {
-      acc[event.severity] = (acc[event.severity] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    
-    const averageDuration = filteredEvents.reduce((sum, event) => sum + event.duration, 0) / totalEvents || 0;
-    const totalImpact = filteredEvents.reduce((sum, event) => {
-      const avgImpact = (event.impacts.agricultural + event.impacts.infrastructure + event.impacts.health + event.impacts.economic) / 4;
-      return sum + avgImpact;
-    }, 0) / totalEvents || 0;
+    if (!eventsData?.summary) {
+      return {
+        totalEvents: 0,
+        eventsByType: {},
+        eventsBySeverity: {},
+        averageDuration: 0,
+        totalImpact: 0
+      };
+    }
 
-    return {
-      totalEvents,
-      eventsByType,
-      eventsBySeverity,
-      averageDuration,
-      totalImpact
-    };
-  }, [filteredEvents]);
+    return eventsData.summary;
+  }, [eventsData]);
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Extreme Weather Events</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-32 w-full" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center py-8">
+            <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-destructive" />
+            <h3 className="text-lg font-semibold mb-2">Error Loading Weather Events</h3>
+            <p className="text-muted-foreground">
+              {error instanceof Error ? error.message : 'Failed to load extreme weather events'}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -345,7 +247,7 @@ export function ExtremeWeatherEvents() {
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockWeatherAlerts.length}</div>
+            <div className="text-2xl font-bold">{eventsData?.alerts?.length || 0}</div>
             <p className="text-xs text-muted-foreground">
               current warnings
             </p>
@@ -354,17 +256,20 @@ export function ExtremeWeatherEvents() {
       </div>
 
       {/* Active Weather Alerts */}
-      {mockWeatherAlerts.length > 0 && (
+      {eventsData?.alerts && eventsData.alerts.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <AlertCircle className="h-5 w-5" />
               <span>Active Weather Alerts</span>
+              <Badge variant="secondary" className="ml-auto">
+                {eventsData.metadata.dataSource}
+              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {mockWeatherAlerts.map((alert) => (
+              {eventsData.alerts.map((alert) => (
                 <div key={alert.id} className="p-4 rounded-lg border">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center space-x-2">
@@ -464,20 +369,24 @@ export function ExtremeWeatherEvents() {
                   <div>
                     <p className="text-xs text-muted-foreground">Intensity</p>
                     <div className="flex items-center space-x-2">
-                      <Progress value={event.intensity * 100} className="h-2 flex-1" />
-                      <span className="text-sm">{(event.intensity * 100).toFixed(0)}%</span>
+                      <Progress value={(event.intensity || 0) * 100} className="h-2 flex-1" />
+                      <span className="text-sm">{((event.intensity || 0) * 100).toFixed(0)}%</span>
                     </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Affected Area</p>
-                    <p className="font-medium">{event.affectedArea} km²</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Total Impact</p>
-                    <p className="font-medium">
-                      {(((event.impacts.agricultural + event.impacts.infrastructure + event.impacts.health + event.impacts.economic) / 4) * 100).toFixed(0)}%
-                    </p>
-                  </div>
+                  {event.affectedArea && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Affected Area</p>
+                      <p className="font-medium">{event.affectedArea} km²</p>
+                    </div>
+                  )}
+                  {event.impacts && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Total Impact</p>
+                      <p className="font-medium">
+                        {(((event.impacts.agricultural || 0) + (event.impacts.infrastructure || 0) + (event.impacts.health || 0) + (event.impacts.economic || 0)) / 4 * 100).toFixed(0)}%
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Event-specific details */}
