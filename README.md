@@ -17,12 +17,13 @@ A comprehensive Next.js application for climate risk assessment and visualizatio
 
 ### Data Sources
 
+- **NISR Geospatial data portal**: Geojson data for local contexts
 - **Sentinel Hub**: NDVI, NDWI, vegetation health monitoring
 - **NASA POWER**: Temperature, precipitation, climate data
 - **OpenTopography**: Elevation, slope, terrain analysis
 - **Mapbox**: Map visualization and rendering
 - **GFMS**: Historical flood events (optional)
-- **NISR Geospatial data portal**: Geojson data for local contexts
+
 
 ## Quick Start
 
