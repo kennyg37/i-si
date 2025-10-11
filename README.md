@@ -3,7 +3,7 @@
 A comprehensive Next.js application for climate risk assessment and visualization, specifically designed for Rwanda. This platform combines multiple data sources to provide real-time flood risk, drought risk, and flood prediction analysis with interactive map visualization.
 
 ## video demo
-([Link](https://drive.google.com/drive/folders/1s9kWNpgV6TT5-AhVbj-o02ZuN0vgTGyM?usp=sharing))
+([video Link](https://drive.google.com/drive/folders/1s9kWNpgV6TT5-AhVbj-o02ZuN0vgTGyM?usp=sharing))
 
 ## Features
 
