@@ -45,38 +45,44 @@ const layers = [
   // NASA GIBS Layers
   {
     id: 'nasa-viirs-flood',
-    name: 'NASA VIIRS Flood Detection (3-Day)',
-    description: 'VIIRS combined flood detection with 3-day composite for better accuracy',
+    name: 'NASA Water Mask',
+    description: 'Static water body detection layer (375m resolution)',
     category: 'NASA GIBS'
   },
   {
-    id: 'nasa-modis-flood',
-    name: 'NASA MODIS Flood Detection (3-Day)',
-    description: 'MODIS combined flood detection with 3-day composite for better accuracy',
+    id: 'nasa-flood-risk',
+    name: 'NASA Flood Risk Zones',
+    description: 'Areas below 10m elevation (high flood risk)',
+    category: 'NASA GIBS'
+  },
+  {
+    id: 'nasa-fire',
+    name: 'NASA Fire Detection',
+    description: 'Active fire thermal anomalies from VIIRS (375m resolution)',
     category: 'NASA GIBS'
   },
   {
     id: 'nasa-soil-moisture',
     name: 'NASA Soil Moisture',
-    description: 'SMAP soil moisture for agricultural monitoring',
+    description: 'SMAP surface soil moisture estimate (9km resolution)',
     category: 'NASA GIBS'
   },
   {
     id: 'nasa-land-temp',
     name: 'NASA Land Surface Temperature',
-    description: 'MODIS land surface temperature for drought monitoring',
+    description: 'MODIS land surface temperature for drought monitoring (1km resolution)',
     category: 'NASA GIBS'
   },
   {
     id: 'nasa-ndvi',
     name: 'NASA NDVI Vegetation',
-    description: 'MODIS vegetation health index',
+    description: 'MODIS vegetation health and greenness (250m resolution)',
     category: 'NASA GIBS'
   },
   {
     id: 'nasa-rainfall-anomaly',
-    name: 'NASA Rainfall Anomaly',
-    description: 'MERRA-2 precipitation anomaly for drought assessment',
+    name: 'NASA Precipitation',
+    description: 'AIRS daily precipitation (25km resolution)',
     category: 'NASA GIBS'
   }
 ];
@@ -145,7 +151,7 @@ export function LayerControls({
           <CardTitle className="text-lg">Data Layers</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {['Sentinel Hub', 'NASA GIBS'].map((category) => {
+          {['NASA GIBS', 'Sentinel Hub'].map((category) => {
             const categoryLayers = layers.filter(layer => layer.category === category);
             if (categoryLayers.length === 0) return null;
 

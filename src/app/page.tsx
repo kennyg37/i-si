@@ -1,45 +1,19 @@
 import Link from 'next/link';
-import { ArrowRight, Map, BarChart3, Shield, Globe } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Map, BarChart3, Shield, Globe, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Navigation } from '@/components/navigation';
+import { HeroSection } from '@/components/hero-section';
 import { AIRiskPredictor } from '@/components/ai-risk-predictor';
 import { ClimateNotifications } from '@/components/climate-notifications';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen dark:text-white">
       <Navigation />
-      
-      {/* Hero Section */}
-      <section className="relative overflow-hidden py-20 px-4">
-        <div className="container mx-auto text-center">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
-              Climate Risk Prediction for{' '}
-              <span className="text-primary">Rwanda</span>
-            </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              I-si (Earth) leverages NASA POWER, CHIRPS, and Sentinel Hub data to predict and visualize 
-              drought, flood, and vegetation stress risks across Rwanda.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button asChild size="lg" className="text-lg px-8">
-                <Link href="/map">
-                  Explore Climate Risks
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="text-lg px-8">
-                <Link href="/insights">
-                  View Insights
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
 
+      {/* Hero Section */}
+      <HeroSection />
       <section className="py-12 px-4">
         <div className="container mx-auto">
           <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">

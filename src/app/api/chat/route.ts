@@ -1,25 +1,33 @@
 import { streamText, convertToModelMessages } from 'ai';
-import { ai, systemPrompts } from '@/lib/ai/config';
+import { ai, getSystemPrompt } from '@/lib/ai/config';
 import { climateTools } from '@/lib/ai/tools';
+import type { AgentType } from '@/lib/context/types';
 
 export const runtime = 'edge';
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
   try {
-    const { messages, agent = 'climateAnalyst' } = await req.json();
+    const { messages, agent = 'climateAnalyst', location } = await req.json();
 
     console.log('Received messages:', JSON.stringify(messages, null, 2));
 
-    // Select system prompt based on agent type
-    const systemPrompt = systemPrompts[agent as keyof typeof systemPrompts] || systemPrompts.climateAnalyst;
+    // Map frontend agent names to internal agent types
+    const agentMap: Record<string, AgentType> = {
+      climateAnalyst: 'climate',
+      floodRiskAssessor: 'flood',
+      agriculturalAdvisor: 'agriculture',
+    };
 
+    const agentType = agentMap[agent] || 'climate';
+    const prompt = getSystemPrompt({ page: 'ai-chat', agent: agentType, location })
+    
     // Convert UI messages to model messages
     const modelMessages = convertToModelMessages(messages);
 
     const result = streamText({
       model: ai.model,
-      system: systemPrompt,
+      system: prompt,
       messages: modelMessages,
       tools: climateTools,
     });

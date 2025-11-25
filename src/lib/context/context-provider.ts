@@ -37,7 +37,7 @@ export function getCurrentSeason(): typeof climateData.seasons[0] {
  * Get climate risk for current month
  */
 export function getCurrentClimateRisk(): string {
-  const climate = climateData as ClimateData;
+  const climate = climateData as unknown as ClimateData;
   const currentMonth = new Date().toLocaleString('default', { month: 'long' });
   const monthPattern = climate.monthlyPatterns[currentMonth as keyof typeof climate.monthlyPatterns];
 
@@ -50,6 +50,7 @@ export function getCurrentClimateRisk(): string {
 export function buildAIContext(options: ContextProviderOptions): AIContext {
   const {
     page,
+    agent,
     location,
     locationName,
     data,
@@ -70,6 +71,7 @@ export function buildAIContext(options: ContextProviderOptions): AIContext {
       description: getPageDescription(page),
       activeFeatures: getPageFeatures(page),
     },
+    agent: agent,
     location: enhancedLocation,
     data,
     knowledgeBase,

@@ -6,6 +6,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useSelectedLocation } from '@/lib/store/map-store';
 import { Bot, User, Send, Loader2, Sparkles, Mic, MicOff, Volume2, Download, Share2 } from 'lucide-react';
 
 interface ClimateChatProps {
@@ -22,15 +23,18 @@ export function ClimateChat({ agent = 'climateAnalyst', initialMessage }: Climat
   const recognitionRef = useRef<any>(null);
   const hasSubmittedInitial = useRef(false);
 
+  const selectedLocation = useSelectedLocation();
+
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
         api: '/api/chat',
         body: {
           agent: selectedAgent,
+          location: selectedLocation?.coordinates || null,
         },
       }),
-    [selectedAgent]
+    [selectedAgent, selectedLocation]
   );
 
   const { messages, sendMessage, status, error } = useChat({
@@ -83,8 +87,13 @@ export function ClimateChat({ agent = 'climateAnalyst', initialMessage }: Climat
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
+    console.log('Submitting user message:', inputValue);
+
+    const theAgent = selectedAgent;
+    console.log('Current selected agent:', theAgent);
 
     sendMessage({ text: inputValue });
+    console.log('User message sent:', inputValue);
     setInputValue('');
   };
 
@@ -178,10 +187,6 @@ export function ClimateChat({ agent = 'climateAnalyst', initialMessage }: Climat
   // Helper to get text content from message parts
   const getMessageText = (message: any) => {
     // Debug log to see message structure
-    if (message.role === 'assistant') {
-      console.log('Assistant message structure:', message);
-    }
-
     if (!message.parts || !Array.isArray(message.parts)) {
       return '';
     }

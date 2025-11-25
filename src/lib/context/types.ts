@@ -219,6 +219,7 @@ export interface KnowledgeBase {
 
 export interface AIContext {
   page: PageContext;
+  agent?: AgentType
   location?: Location;
   data?: DataContext;
   knowledgeBase: KnowledgeBase;
@@ -239,8 +240,11 @@ export interface LocationResolutionResult {
 // Context Provider Options
 export interface ContextProviderOptions {
   page: PageType;
+  agent?: AgentType
   location?: Coordinates;
   locationName?: string;
   data?: DataContext;
   includeKnowledgeBase?: boolean;
 }
+
+export type AgentType = 'climate' | 'flood' | 'agriculture'

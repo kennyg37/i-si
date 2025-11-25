@@ -5,7 +5,7 @@ export class NASAPowerAPI {
   private proxyURL: string;
 
   constructor() {
-    this.proxyURL = '/api/proxy/nasa-power';
+    this.proxyURL = 'https://power.larc.nasa.gov/api';
   }
 
   async getClimateData(params: NASAPowerParams): Promise<NASAPowerResponse | null> {
@@ -26,15 +26,17 @@ export class NASAPowerAPI {
         params.start = maxPastDate.toISOString().slice(0, 10).replace(/-/g, '');
       }
 
-      const response = await axios.get(this.proxyURL, {
+      const url = `${this.proxyURL}/temporal/daily/point`
+
+      const response = await axios.get(url, {
         params: {
-          endpoint: 'temporal/daily/point',
           parameters: params.parameters,
           latitude: params.lat,
           longitude: params.lon,
           start: params.start,
           end: params.end,
-          community: 'RE'
+          community: 'RE',
+          format: 'JSON'
         },
         timeout: 30000
       });
