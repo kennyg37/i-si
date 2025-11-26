@@ -1,13 +1,8 @@
 import { useState, useCallback } from 'react';
-
-export interface GeolocationCoordinates {
-  lat: number;
-  lon: number;
-  accuracy?: number;
-}
+import { Coordinates } from '@/types';
 
 export interface GeolocationState {
-  coordinates: GeolocationCoordinates | null;
+  coordinates: Coordinates | null;
   isLoading: boolean;
   error: string | null;
 }
@@ -37,7 +32,6 @@ export function useGeolocation() {
           coordinates: {
             lat: position.coords.latitude,
             lon: position.coords.longitude,
-            accuracy: position.coords.accuracy,
           },
           isLoading: false,
           error: null,

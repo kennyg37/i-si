@@ -43,6 +43,7 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
     clearMarkers
   } = useMapStore();
 
+
   // Handlers
   const handleMapLoad = useCallback(() => {
     setMapLoaded(true);
@@ -105,6 +106,9 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
       });
       setAnalyticsCoordinates(geoCoordinates);
       setShowAnalytics(true);
+      setSelectedLocation({
+        coordinates: geoCoordinates,
+      });
     }
   }, [geoCoordinates, geoError]);
 

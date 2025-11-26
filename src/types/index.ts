@@ -379,3 +379,46 @@ export interface AppState {
   climate: ClimateDataState;
   preferences: UserPreferences;
 }
+
+// ==================== Insights Types ====================
+
+export interface InsightsSummary {
+  temperature: {
+    average: number;
+    min: number;
+    max: number;
+    trend: 'increasing' | 'decreasing' | 'stable';
+  };
+  precipitation: {
+    total: number;
+    average: number;
+    max: number;
+    rainyDays: number;
+  };
+  humidity?: {
+    average: number;
+    min: number;
+    max: number;
+  };
+  wind?: {
+    average: number;
+    max: number;
+  };
+  solar?: {
+    average: number;
+  };
+}
+
+export interface InsightsContext {
+  timeRange: number;
+  activeTab: string;
+  viewMode: 'current' | 'historical';
+  chartType: 'line' | 'bar' | 'area';
+  location: {
+    lat: number;
+    lon: number;
+    name: string;
+  } | null;
+  summary: InsightsSummary | null;
+  lastUpdated: string;
+}

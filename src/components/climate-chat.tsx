@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSelectedLocation } from '@/lib/store/map-store';
+import { useInsightsStore } from '@/lib/store/insights-store';
 import { Bot, User, Send, Loader2, Sparkles, Mic, MicOff, Volume2, Download, Share2 } from 'lucide-react';
 
 interface ClimateChatProps {
@@ -25,6 +26,25 @@ export function ClimateChat({ agent = 'climateAnalyst', initialMessage }: Climat
 
   const selectedLocation = useSelectedLocation();
 
+  // Use individual selectors to avoid object reference issues
+  const insightsSummary = useInsightsStore((state) => state.summary);
+  const insightsTimeRange = useInsightsStore((state) => state.timeRange);
+  const insightsActiveTab = useInsightsStore((state) => state.activeTab);
+  const insightsViewMode = useInsightsStore((state) => state.viewMode);
+  const insightsLocation = useInsightsStore((state) => state.location);
+
+  // Create stable key for insights to prevent unnecessary recreations
+  const insightsConfig = useMemo(() => {
+    if (!insightsSummary) return null;
+    return {
+      timeRange: insightsTimeRange,
+      activeTab: insightsActiveTab,
+      viewMode: insightsViewMode,
+      location: insightsLocation,
+      summary: insightsSummary,
+    };
+  }, [insightsSummary, insightsTimeRange, insightsActiveTab, insightsViewMode, insightsLocation]);
+
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
@@ -32,16 +52,24 @@ export function ClimateChat({ agent = 'climateAnalyst', initialMessage }: Climat
         body: {
           agent: selectedAgent,
           location: selectedLocation?.coordinates || null,
+          ...(insightsConfig && { insights: insightsConfig }),
         },
       }),
-    [selectedAgent, selectedLocation]
+    [selectedAgent, selectedLocation, insightsConfig]
   );
-
   const { messages, sendMessage, status, error } = useChat({
     transport,
   });
 
   const isLoading = status === 'streaming' || status === 'submitted';
+
+  // Create a ref to store the latest sendMessage function
+  const sendMessageRef = useRef(sendMessage);
+
+  // Keep sendMessageRef up to date
+  useEffect(() => {
+    sendMessageRef.current = sendMessage;
+  }, [sendMessage]);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -74,9 +102,9 @@ export function ClimateChat({ agent = 'climateAnalyst', initialMessage }: Climat
   useEffect(() => {
     if (initialMessage && !hasSubmittedInitial.current && !isLoading && messages.length === 0) {
       hasSubmittedInitial.current = true;
-      sendMessage({ text: initialMessage });
+      sendMessageRef.current({ text: initialMessage });
     }
-  }, [initialMessage, isLoading, messages.length, sendMessage]);
+  }, [initialMessage, isLoading, messages.length]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {

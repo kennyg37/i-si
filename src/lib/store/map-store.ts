@@ -217,6 +217,9 @@ export const useMapStore = create<MapState>()(
           // Only persist certain fields
           viewport: state.viewport,
           activeLayers: state.activeLayers,
+          selectedLocation: state.selectedLocation,
+          clickedCoordinates: state.clickedCoordinates,
+          markers: state.markers
         }),
       }
     ),

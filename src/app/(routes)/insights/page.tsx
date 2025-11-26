@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Navigation } from '@/components/navigation';
+import { useInsightsStore, buildInsightsSummary } from '@/lib/store/insights-store';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -26,9 +27,16 @@ type ViewMode = 'current' | 'historical';
 type ChartType = 'line' | 'bar' | 'area';
 
 export default function InsightsPage() {
-  const [viewMode, setViewMode] = useState<ViewMode>('current');
-  const [timeRange, setTimeRange] = useState<number>(30);
-  const [chartType, setChartType] = useState<ChartType>('line');
+  // Zustand store for insights context - use individual selectors to prevent unnecessary re-renders
+  const viewMode = useInsightsStore((state) => state.viewMode);
+  const setViewMode = useInsightsStore((state) => state.setViewMode);
+  const timeRange = useInsightsStore((state) => state.timeRange);
+  const setTimeRange = useInsightsStore((state) => state.setTimeRange);
+  const chartType = useInsightsStore((state) => state.chartType);
+  const setChartType = useInsightsStore((state) => state.setChartType);
+  const activeTab = useInsightsStore((state) => state.activeTab);
+  const setActiveTab = useInsightsStore((state) => state.setActiveTab);
+  const setSummary = useInsightsStore((state) => state.setSummary);
 
   const { data: tempData, isLoading: tempLoading, refetch: refetchTemp } = useHistoricalTemperature(timeRange);
   const { data: precipData, isLoading: precipLoading, refetch: refetchPrecip } = useHistoricalPrecipitation(timeRange);
@@ -37,6 +45,23 @@ export default function InsightsPage() {
   const { data: humidityData } = useHumidityData(timeRange);
   const { data: windData } = useWindData(timeRange);
   const { data: solarData} = useSolarRadiationData(timeRange);
+
+  // Track previous summary to prevent unnecessary updates
+  const prevSummaryRef = useRef<string | null>(null);
+
+  // Update store when stats change
+  useEffect(() => {
+    if (stats) {
+      const newSummary = buildInsightsSummary(stats);
+      const newSummaryStr = JSON.stringify(newSummary);
+
+      // Only update if summary actually changed
+      if (prevSummaryRef.current !== newSummaryStr) {
+        prevSummaryRef.current = newSummaryStr;
+        setSummary(newSummary);
+      }
+    }
+  }, [stats, setSummary]);
 
   const handleRefresh = () => {
     refetchTemp();

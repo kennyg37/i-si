@@ -83,12 +83,15 @@ RESPONSE GUIDELINES:
 - If on insights/map page, reference what user can see
 - Use knowledge base for fallback information if APIs fail
 - NO topic drifting you only answer questions regarding climate and scientific concepts that are related
+- After using tools to gather data, ALWAYS provide a clear, conversational response 
+to the user summarizing the findings. Never end the conversation after a tool call 
+without responding.
 
 SEASONAL AWARENESS:
 ${getCurrentSeasonContext(context)}
 
 PAGE-SPECIFIC BEHAVIOR:
-${getPageSpecificGuidance(page.page)}
+${getPageSpecificGuidance(page.page, context)}
 
 TONE & STYLE:
 - Professional but friendly
@@ -163,7 +166,7 @@ function getCurrentSeasonContext(context: AIContext): string {
 /**
  * Get page-specific guidance
  */
-function getPageSpecificGuidance(page: string): string {
+function getPageSpecificGuidance(page: string, context?: AIContext): string {
   const guidance: Record<string, string> = {
     'map': `User is viewing an interactive map. They can:
 - Click locations to select coordinates
@@ -176,6 +179,26 @@ Suggest map interactions and reference visible layers when relevant.`,
 - Statistical summaries
 - Extreme weather events
 - Climate patterns
+
+${context?.data?.insights ? `
+DISPLAYED DATA (Last ${context.data.visibleData?.timeRange || 30} days):
+- Temperature: ${context.data.insights.temperature.average.toFixed(1)}°C (trend: ${context.data.insights.temperature.trend})
+  Range: ${context.data.insights.temperature.min.toFixed(1)}°C to ${context.data.insights.temperature.max.toFixed(1)}°C
+- Precipitation: ${context.data.insights.precipitation.total.toFixed(1)}mm total
+  Average: ${context.data.insights.precipitation.average.toFixed(1)}mm/day
+  Rainy days: ${context.data.insights.precipitation.rainyDays}
+${context.data.insights.humidity ? `- Humidity: ${context.data.insights.humidity.average.toFixed(1)}% (${context.data.insights.humidity.min.toFixed(1)}% - ${context.data.insights.humidity.max.toFixed(1)}%)` : ''}
+${context.data.insights.wind ? `- Wind: ${context.data.insights.wind.average.toFixed(1)} m/s (max: ${context.data.insights.wind.max.toFixed(1)} m/s)` : ''}
+${context.data.insights.solar ? `- Solar Radiation: ${context.data.insights.solar.average.toFixed(1)} MJ/m²/day` : ''}
+
+IMPORTANT: Reference these EXACT values when answering questions about current data.
+Do NOT call tools for data that is already displayed above. Only use tools for:
+- Different time periods than shown
+- Different locations
+- Additional metrics not displayed
+- Deeper analysis requiring historical comparison
+` : ''}
+
 Reference visible charts and data. Help interpret trends and patterns.`,
 
     'ai-chat': `User is in the AI chat interface. They expect:
