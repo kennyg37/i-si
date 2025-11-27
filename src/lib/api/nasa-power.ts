@@ -10,15 +10,19 @@ export class NASAPowerAPI {
 
   async getClimateData(params: NASAPowerParams): Promise<NASAPowerResponse | null> {
     try {
+      // Remove hyphens from dates (NASA API requires YYYYMMDD format)
+      params.start = params.start.replace(/-/g, '');
+      params.end = params.end.replace(/-/g, '');
+
       // Validate date range
-      const endDate = new Date(params.end);
+      const endDate = new Date(params.end.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3'));
       const today = new Date();
 
       if (endDate > today) {
         params.end = today.toISOString().slice(0, 10).replace(/-/g, '');
       }
 
-      const startDate = new Date(params.start);
+      const startDate = new Date(params.start.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3'));
       const maxPastDate = new Date();
       maxPastDate.setFullYear(maxPastDate.getFullYear() - 5);
 
@@ -40,10 +44,12 @@ export class NASAPowerAPI {
         },
         timeout: 30000
       });
+      console.log(params)
 
       return response.data;
     } catch (error) {
       console.error('NASA POWER API Error:', error);
+      console.log(params)
       return null;
     }
   }

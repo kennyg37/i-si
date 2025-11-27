@@ -58,16 +58,21 @@ export const getRainfallData = tool({
       return { error: 'Failed to fetch rainfall data from NASA POWER API' };
     }
 
-    const values = data.properties?.parameter?.PRECTOTCORR
-      ? Object.values(data.properties.parameter.PRECTOTCORR).filter(
-          (p): p is number => typeof p === 'number' && p >= 0
-        )
-      : [];
+    const rawData = data.properties?.parameter?.PRECTOTCORR || {};
 
-    if (values.length === 0) {
+    // Extract data with dates
+    const dailyDataWithDates = Object.entries(rawData)
+      .filter(([_, value]) => typeof value === 'number' && value >= 0)
+      .map(([date, value]) => ({
+        date: date, // Format: YYYYMMDD
+        value: value as number,
+      }));
+
+    if (dailyDataWithDates.length === 0) {
       return { error: 'No rainfall data available for this location and date range' };
     }
 
+    const values = dailyDataWithDates.map(d => d.value);
     const total = values.reduce((sum, val) => sum + val, 0);
     const average = total / values.length;
     const recent7Days = values.slice(-7);
@@ -82,7 +87,8 @@ export const getRainfallData = tool({
       averageDaily: average.toFixed(2) + ' mm/day',
       recent7DaysAverage: recent7DaysAvg.toFixed(2) + ' mm/day',
       dataPoints: values.length,
-      dailyValues: values.slice(-30), // Last 30 days
+      dailyValues: values.slice(-30), // Last 30 days (for backward compatibility)
+      dailyData: dailyDataWithDates.slice(-30), // Last 30 days with dates (NEW - for visualization)
       source: 'NASA POWER API',
     };
   },
@@ -312,6 +318,65 @@ export const compareLocations = tool({
 });
 
 /**
+ * Format data into tabular structure for visualization
+ */
+export const formatTabularData = tool({
+  description: 'Format climate data into a tabular structure suitable for visualization. Use this after retrieving rainfall, temperature, or other time-series data when the user asks to "visualize", "see a chart/graph", or "plot the data". Take the dailyData array from getRainfallData (which has date and value fields) and pass it to this tool along with appropriate title and data type.',
+  inputSchema: zodSchema(z.object({
+    data: z.array(z.object({
+      date: z.string().describe('Date in readable format (e.g., "2025-01-20" or "Jan 20")'),
+      value: z.number().describe('Numerical value for this data point'),
+      label: z.string().optional().describe('Optional label for this data point'),
+    })).describe('Array of data points with date and value'),
+    dataType: z.enum(['rainfall', 'temperature', 'elevation', 'risk', 'other']).describe('Type of data being visualized'),
+    title: z.string().describe('Title for the visualization'),
+    unit: z.string().optional().describe('Unit of measurement (e.g., "mm", "°C", "%")'),
+  })),
+  execute: async ({ data, dataType, title, unit }) => {
+    // Helper to format date from YYYYMMDD to readable format
+    const formatDate = (dateStr: string) => {
+      if (dateStr.length === 8) {
+        // YYYYMMDD format
+        const month = dateStr.substring(4, 6);
+        const day = dateStr.substring(6, 8);
+        return `${month}/${day}`;
+      }
+      return dateStr; // Already formatted
+    };
+
+    // Format data for visualization
+    const formattedData = data.map(d => ({
+      date: formatDate(d.date),
+      value: d.value,
+      label: d.label,
+    }));
+
+    // Return structured data with a special marker for the UI to detect
+    return {
+      __type: 'tabular-visualization', // Special marker for UI detection
+      visualizationType: 'time-series',
+      title,
+      dataType,
+      unit: unit || '',
+      headers: ['Date', 'Value'],
+      rows: formattedData.map(d => [d.date, d.value, d.label || '']),
+      chartConfig: {
+        xAxis: 'Date',
+        yAxis: 'Value',
+        unit: unit || (dataType === 'rainfall' ? 'mm' : dataType === 'temperature' ? '°C' : ''),
+      },
+      rawData: formattedData, // For chart library to use directly
+      metadata: {
+        dataPoints: data.length,
+        minValue: Math.min(...data.map(d => d.value)),
+        maxValue: Math.max(...data.map(d => d.value)),
+        avgValue: data.reduce((sum, d) => sum + d.value, 0) / data.length,
+      },
+    };
+  },
+});
+
+/**
  * Export all tools for AI agents
  */
 export const climateTools = {
@@ -324,4 +389,5 @@ export const climateTools = {
   getMapView,
   navigateMap,
   compareLocations,
+  formatTabularData,
 };

@@ -6,6 +6,7 @@ import { Map, BarChart3, Info, Home, Bot, Bell, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { LiveLocation } from './live-location';
 
 const navigation = [
   { name: 'Home', href: '/', icon: Home },
@@ -52,6 +53,7 @@ export function Navigation() {
               })}
             </div>
           </div>
+          <LiveLocation />
           
           <div className="flex items-center space-x-2">
             <Link href="/notifications">

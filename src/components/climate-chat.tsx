@@ -3,12 +3,14 @@
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useState, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSelectedLocation } from '@/lib/store/map-store';
 import { useInsightsStore } from '@/lib/store/insights-store';
-import { Bot, User, Send, Loader2, Sparkles, Mic, MicOff, Volume2, Download, Share2 } from 'lucide-react';
+import { Bot, User, Send, Loader2, Sparkles, Mic, MicOff, Volume2, Download, Share2, BarChart3 } from 'lucide-react';
+import { DataVisualizationChart } from '@/components/data-visualization-chart';
 
 interface ClimateChatProps {
   agent?: 'climateAnalyst' | 'floodRiskAssessor' | 'agriculturalAdvisor';
@@ -20,6 +22,8 @@ export function ClimateChat({ agent = 'climateAnalyst', initialMessage }: Climat
   const [inputValue, setInputValue] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [activeVisualization, setActiveVisualization] = useState<any>(null);
+  const [isSpeechRecognitionSupported, setIsSpeechRecognitionSupported] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const hasSubmittedInitial = useRef(false);
@@ -74,28 +78,56 @@ export function ClimateChat({ agent = 'climateAnalyst', initialMessage }: Climat
   // Initialize speech recognition
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      // Support multiple browser implementations
+      const SpeechRecognition =
+        (window as any).SpeechRecognition ||
+        (window as any).webkitSpeechRecognition ||
+        (window as any).mozSpeechRecognition ||
+        (window as any).msSpeechRecognition;
+
       if (SpeechRecognition) {
-        recognitionRef.current = new SpeechRecognition();
-        recognitionRef.current.continuous = false;
-        recognitionRef.current.interimResults = false;
-        recognitionRef.current.lang = 'en-US';
+        try {
+          recognitionRef.current = new SpeechRecognition();
+          recognitionRef.current.continuous = false;
+          recognitionRef.current.interimResults = false;
+          recognitionRef.current.lang = 'en-US';
 
-        recognitionRef.current.onresult = (event: any) => {
-          const transcript = event.results[0][0].transcript;
-          setInputValue(transcript);
-          setIsListening(false);
-        };
+          recognitionRef.current.onresult = (event: any) => {
+            const transcript = event.results[0][0].transcript;
+            setInputValue(transcript);
+            setIsListening(false);
+          };
 
-        recognitionRef.current.onerror = () => {
-          setIsListening(false);
-        };
+          recognitionRef.current.onerror = (event: any) => {
+            console.error('Speech recognition error:', event.error);
+            setIsListening(false);
+          };
 
-        recognitionRef.current.onend = () => {
-          setIsListening(false);
-        };
+          recognitionRef.current.onend = () => {
+            setIsListening(false);
+          };
+
+          setIsSpeechRecognitionSupported(true);
+        } catch (error) {
+          console.error('Failed to initialize speech recognition:', error);
+          setIsSpeechRecognitionSupported(false);
+        }
+      } else {
+        setIsSpeechRecognitionSupported(false);
       }
     }
+
+    // Cleanup: stop and clear recognition instance
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {
+          // Ignore errors if recognition wasn't started
+        }
+        recognitionRef.current = null;
+      }
+    };
   }, []);
 
   // Auto-submit initial message
@@ -110,6 +142,31 @@ export function ClimateChat({ agent = 'climateAnalyst', initialMessage }: Climat
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (activeVisualization) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [activeVisualization]);
+
+  // ESC key handler to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && activeVisualization) {
+        setActiveVisualization(null);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [activeVisualization]);
 
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -126,12 +183,28 @@ export function ClimateChat({ agent = 'climateAnalyst', initialMessage }: Climat
   };
 
   const toggleVoiceInput = () => {
+    if (!recognitionRef.current) {
+      alert('Speech recognition is not supported in this browser. Please try Chrome or Edge.');
+      return;
+    }
+
     if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
+      try {
+        recognitionRef.current.stop();
+        setIsListening(false);
+      } catch (error) {
+        console.error('Error stopping speech recognition:', error);
+        setIsListening(false);
+      }
     } else {
-      recognitionRef.current?.start();
-      setIsListening(true);
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (error) {
+        console.error('Error starting speech recognition:', error);
+        alert('Could not start speech recognition. Please check your microphone permissions.');
+        setIsListening(false);
+      }
     }
   };
 
@@ -225,7 +298,33 @@ export function ClimateChat({ agent = 'climateAnalyst', initialMessage }: Climat
       .join('');
   };
 
+  // Helper to detect tabular visualization data in tool results
+  const getTabularVisualization = (message: any) => {
+    if (!message.parts || !Array.isArray(message.parts)) {
+      return null;
+    }
+
+    // Look for formatTabularData tool calls with output
+    for (const part of message.parts) {
+      // Check if it's a tool call/result with formatTabularData
+      if (
+        (part.type === 'tool-formatTabularData' || part.type === 'tool-result') &&
+        part.output &&
+        part.output.__type === 'tabular-visualization'
+      ) {
+        return part.output;
+      }
+      // Also check the result field (different SDK versions)
+      if (part.result && part.result.__type === 'tabular-visualization') {
+        return part.result;
+      }
+    }
+
+    return null;
+  };
+
   return (
+    <>
     <Card className="h-full flex flex-col">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
@@ -285,6 +384,7 @@ export function ClimateChat({ agent = 'climateAnalyst', initialMessage }: Climat
             const hasTools = message.parts?.some((part: any) =>
               part.type === 'tool-call' || part.type === 'tool-result'
             );
+            const tabularData = getTabularVisualization(message);
 
             return (
               <div
@@ -320,6 +420,55 @@ export function ClimateChat({ agent = 'climateAnalyst', initialMessage }: Climat
                           <Volume2 className="h-3 w-3" />
                         </Button>
                       )}
+                    </div>
+                  )}
+
+                  {/* Tabular Visualization Data */}
+                  {tabularData && (
+                    <div className="mt-3 space-y-2">
+                      {/* Table Preview */}
+                      <div className="border rounded-lg overflow-hidden bg-background">
+                        <div className="max-h-[200px] overflow-auto">
+                          <table className="w-full text-xs">
+                            <thead className="bg-muted sticky top-0">
+                              <tr>
+                                {tabularData.headers.map((header: string, idx: number) => (
+                                  <th key={idx} className="p-2 text-left font-medium">
+                                    {header}
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {tabularData.rows.slice(0, 5).map((row: any[], idx: number) => (
+                                <tr key={idx} className="border-t hover:bg-muted/50">
+                                  {row.slice(0, 2).map((cell: any, cellIdx: number) => (
+                                    <td key={cellIdx} className="p-2">
+                                      {typeof cell === 'number' ? cell.toFixed(2) : cell}
+                                    </td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        {tabularData.rows.length > 5 && (
+                          <div className="text-xs text-center py-1 bg-muted/50 text-muted-foreground">
+                            +{tabularData.rows.length - 5} more rows
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Generate Graph Button */}
+                      <Button
+                        onClick={() => setActiveVisualization(tabularData)}
+                        className="w-full"
+                        size="sm"
+                        variant="default"
+                      >
+                        <BarChart3 className="h-4 w-4 mr-2" />
+                        Generate Graph
+                      </Button>
                     </div>
                   )}
 
@@ -410,21 +559,23 @@ export function ClimateChat({ agent = 'climateAnalyst', initialMessage }: Climat
 
         {/* Input */}
         <form onSubmit={handleSubmit} className="flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={toggleVoiceInput}
-            disabled={isLoading}
-            className={isListening ? 'bg-red-500 text-white hover:bg-red-600' : ''}
-            title={isListening ? 'Stop listening' : 'Voice input'}
-          >
-            {isListening ? (
-              <MicOff className="h-4 w-4 animate-pulse" />
-            ) : (
-              <Mic className="h-4 w-4" />
-            )}
-          </Button>
+          {isSpeechRecognitionSupported && (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={toggleVoiceInput}
+              disabled={isLoading}
+              className={isListening ? 'bg-red-500 text-white hover:bg-red-600' : ''}
+              title={isListening ? 'Stop listening' : 'Voice input'}
+            >
+              {isListening ? (
+                <MicOff className="h-4 w-4 animate-pulse" />
+              ) : (
+                <Mic className="h-4 w-4" />
+              )}
+            </Button>
+          )}
           <input
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
@@ -442,5 +593,35 @@ export function ClimateChat({ agent = 'climateAnalyst', initialMessage }: Climat
         </form>
       </CardContent>
     </Card>
+
+    {/* Full-Page Chart Visualization Modal (Portal) */}
+    {activeVisualization && typeof window !== 'undefined' && createPortal(
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center animate-in fade-in duration-200"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="chart-modal-title"
+      >
+        {/* Backdrop */}
+        <div
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          onClick={() => setActiveVisualization(null)}
+          aria-label="Close modal"
+        />
+
+        {/* Modal Container */}
+        <div className="relative z-10 w-full max-w-6xl mx-4 animate-in zoom-in-95 duration-200">
+          <DataVisualizationChart
+            title={activeVisualization.title}
+            data={activeVisualization.rawData}
+            unit={activeVisualization.unit}
+            dataType={activeVisualization.dataType}
+            onClose={() => setActiveVisualization(null)}
+          />
+        </div>
+      </div>,
+      document.body
+    )}
+  </>
   );
 }
